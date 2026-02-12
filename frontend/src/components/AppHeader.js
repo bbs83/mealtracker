@@ -24,7 +24,9 @@ export const AppHeader = () => {
         
         {user ? (
           <div className="flex items-center gap-3">
-            <span className="hidden sm:block text-sm text-muted-foreground">{user.name}</span>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/app')} className="hidden sm:inline-flex">Dashboard</Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/app/tracker')} className="hidden sm:inline-flex" data-testid="header-tracker-button">Tracker</Button>
+            <span className="hidden md:block text-sm text-muted-foreground">{user.name}</span>
             <Button variant="ghost" size="sm" onClick={handleLogout} data-testid="logout-button">
               <LogOut className="w-4 h-4 mr-1" /> Sair
             </Button>
