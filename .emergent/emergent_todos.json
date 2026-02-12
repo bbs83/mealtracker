@@ -33,7 +33,7 @@
   },
   {
     "content": "Phase 2: End to End Testing using Testing Agent",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Phase 3: Add Auth (email/password + JWT)",
@@ -44,7 +44,7 @@
     "status": "completed"
   },
   {
-    "content": "Phase 3: End to End Testing using Testing Agent",
-    "status": "pending"
+    "content": "Phase 3: Full E2E Testing - Signup, Form, Generate, View Plan",
+    "status": "in_progress"
   }
 ]
