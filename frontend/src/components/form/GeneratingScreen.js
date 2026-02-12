@@ -4,15 +4,22 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 
 const MESSAGES = [
-  'Analisando seus dados pessoais...',
-  'Calculando taxa metabolica basal e gasto energetico...',
-  'Avaliando suas condicoes de saude e restricoes...',
-  'Analisando seu recordatorio alimentar semanal...',
-  'Montando o cardapio de 7 dias...',
-  'Definindo distribuicao de macronutrientes...',
-  'Criando tabela de substituicoes...',
-  'Preparando orientacoes personalizadas...',
-  'Finalizando seu plano nutricional...',
+  'Analisando seus dados pessoais e medidas corporais...',
+  'Calculando taxa metabólica basal e gasto energético total...',
+  'Avaliando suas condições de saúde e restrições alimentares...',
+  'Analisando detalhadamente seu recordatório alimentar semanal...',
+  'Estimando calorias e macronutrientes da sua alimentação atual...',
+  'Identificando déficits e excessos nutricionais...',
+  'Montando o cardápio personalizado — Segunda-feira...',
+  'Montando o cardápio personalizado — Terça e Quarta...',
+  'Montando o cardápio personalizado — Quinta e Sexta...',
+  'Montando o cardápio personalizado — Sábado e Domingo...',
+  'Definindo distribuição ideal de macronutrientes...',
+  'Criando tabela de substituições equivalentes...',
+  'Preparando orientações personalizadas de hidratação...',
+  'Elaborando dicas de preparo e organização semanal...',
+  'Montando o resumo executivo do seu plano...',
+  'Revisando e finalizando seu plano nutricional completo...',
 ];
 
 export default function GeneratingScreen() {
@@ -21,8 +28,12 @@ export default function GeneratingScreen() {
 
   useEffect(() => {
     const msgInterval = setInterval(() => {
-      setMessageIndex(prev => (prev + 1) % MESSAGES.length);
-    }, 7000);
+      setMessageIndex(prev => {
+        // Non-looping: stop at last message
+        if (prev >= MESSAGES.length - 1) return prev;
+        return prev + 1;
+      });
+    }, 30000); // ~30s per message for 8 min total
     const timerInterval = setInterval(() => {
       setElapsed(prev => prev + 1);
     }, 1000);
@@ -35,11 +46,11 @@ export default function GeneratingScreen() {
   const formatTime = (s) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
-    return m > 0 ? `${m}m ${sec.toString().padStart(2, '0')}s` : `${sec}s`;
+    return m > 0 ? `${m}min ${sec.toString().padStart(2, '0')}s` : `${sec}s`;
   };
 
-  // Simulate progress (capped at 95% until done)
-  const progress = Math.min(95, (elapsed / 120) * 100);
+  // Progress capped at 95% until done (based on ~480s = 8min)
+  const progress = Math.min(95, (elapsed / 480) * 100);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
@@ -49,7 +60,8 @@ export default function GeneratingScreen() {
             <Leaf className="w-8 h-8 text-primary animate-pulse" />
           </div>
           <h2 className="text-2xl font-semibold mb-3" style={{ fontFamily: "'Fraunces', serif" }}>Estamos montando seu plano personalizado</h2>
-          <p className="text-muted-foreground mb-4">Isso pode levar ate 2 minutos.</p>
+          <p className="text-muted-foreground mb-2">Estamos utilizando inteligência artificial avançada para criar um plano completo e detalhado.</p>
+          <p className="text-sm text-muted-foreground mb-4">Esse processo pode levar <strong>até 8 minutos</strong>. Por favor, não feche esta página.</p>
           
           {/* Elapsed timer */}
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mb-4">
@@ -62,9 +74,9 @@ export default function GeneratingScreen() {
             <Progress value={progress} className="h-2" />
           </div>
 
-          <div className="flex items-center justify-center gap-2 text-sm text-primary font-medium">
+          <div className="flex items-center justify-center gap-2 text-sm text-primary font-medium min-h-[24px]">
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span key={messageIndex} className="transition-opacity duration-500">{MESSAGES[messageIndex]}</span>
+            <span>{MESSAGES[messageIndex]}</span>
           </div>
         </div>
 
