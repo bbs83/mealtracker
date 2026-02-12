@@ -335,6 +335,40 @@ async def generate_plan(assessment_id: str, request: Request):
         system_prompt = PROMPT_TEMPLATE.replace('{PATIENT_JSON}', patient_json)
         
         logger.info(f"Generating nutrition plan for assessment {assessment_id}")
+        
+        # Build user content - supports multimodal if lab file is attached
+        user_content = []
+        lab_file = assessment.get('lab_file')
+        if lab_file and lab_file.get('base64') and lab_file.get('media_type'):
+            media_type = lab_file['media_type']
+            if media_type.startswith('image/'):
+                user_content.append({
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": media_type,
+                        "data": lab_file['base64']
+                    }
+                })
+            elif media_type == 'application/pdf':
+                user_content.append({
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": media_type,
+                        "data": lab_file['base64']
+                    }
+                })
+            user_content.append({
+                "type": "text",
+                "text": "Gere meu plano nutricional completo com base nos dados informados. Os exames laboratoriais foram anexados acima como imagem/documento."
+            })
+        else:
+            user_content.append({
+                "type": "text",
+                "text": "Gere meu plano nutricional completo com base nos dados informados."
+            })
+        
         message = anthropicClient.messages.create(
             model="claude-sonnet-4-5-20250929",
             max_tokens=16000,
@@ -342,7 +376,7 @@ async def generate_plan(assessment_id: str, request: Request):
             system=system_prompt,
             messages=[{
                 "role": "user",
-                "content": "Gere meu plano nutricional completo com base nos dados informados."
+                "content": user_content
             }]
         )
         plan_markdown = message.content[0].text
