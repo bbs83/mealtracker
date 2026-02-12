@@ -50,26 +50,24 @@ export default function DashboardPage() {
       <AppHeader />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-semibold mb-1" style={{ fontFamily: "'Fraunces', serif" }} data-testid="dashboard-title">Ola, {user?.name?.split(' ')[0]}</h1>
+          <h1 className="text-2xl sm:text-3xl font-semibold mb-1" style={{ fontFamily: "'Fraunces', serif" }} data-testid="dashboard-title">Olá, {user?.name?.split(' ')[0]}</h1>
           <p className="text-muted-foreground">Gerencie seus planos nutricionais</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5 mb-8">
-          {/* CTA Card */}
           <Card className="md:col-span-7 rounded-2xl border border-border bg-card hover:shadow-lg transition-shadow duration-200" data-testid="dashboard-new-assessment-card">
             <CardContent className="p-6 sm:p-8">
               <h3 className="text-xl font-semibold mb-2" style={{ fontFamily: "'Fraunces', serif" }}>Criar novo plano</h3>
-              <p className="text-sm text-muted-foreground mb-6 leading-6">Preencha o questionario de anamnese nutricional e receba um plano alimentar personalizado de 7 dias. Leva cerca de 8-10 minutos.</p>
+              <p className="text-sm text-muted-foreground mb-6 leading-6">Preencha o questionário de anamnese nutricional e receba um plano alimentar personalizado de 7 dias. Leva cerca de 8-10 minutos.</p>
               <Button size="lg" className="h-11" onClick={() => navigate('/app/new')} data-testid="dashboard-new-assessment-button">
-                <Plus className="w-4 h-4 mr-2" /> Novo questionario
+                <Plus className="w-4 h-4 mr-2" /> Novo questionário
               </Button>
             </CardContent>
           </Card>
 
-          {/* Last plan card */}
           <Card className="md:col-span-5 rounded-2xl border border-border bg-card" data-testid="dashboard-last-plan-card">
             <CardContent className="p-6 sm:p-8">
-              <h3 className="text-lg font-semibold mb-3" style={{ fontFamily: "'Fraunces', serif" }}>Ultimo plano</h3>
+              <h3 className="text-lg font-semibold mb-3" style={{ fontFamily: "'Fraunces', serif" }}>Último plano</h3>
               {loading ? (
                 <div className="space-y-3">
                   <Skeleton className="h-4 w-3/4" />
@@ -83,7 +81,7 @@ export default function DashboardPage() {
                     <span className="text-xs text-muted-foreground">{formatDate(plans[0].created_at)}</span>
                   </div>
                   <p className="text-sm text-muted-foreground mb-4">
-                    {plans[0].status === 'ready' ? 'Seu plano esta pronto para visualizacao.' : plans[0].status === 'generating' ? 'Seu plano esta sendo gerado...' : 'Houve um erro ao gerar o plano.'}
+                    {plans[0].status === 'ready' ? 'Seu plano está pronto para visualização.' : plans[0].status === 'generating' ? 'Seu plano está sendo gerado...' : 'Houve um erro ao gerar o plano.'}
                   </p>
                   {plans[0].status === 'ready' && (
                     <Button variant="secondary" size="sm" onClick={() => navigate(`/app/plans/${plans[0].id}`)}>
@@ -101,11 +99,10 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* History table */}
         <Card className="rounded-2xl border border-border" data-testid="dashboard-history-card">
           <CardHeader>
-            <CardTitle className="text-lg" style={{ fontFamily: "'Fraunces', serif" }}>Historico de planos</CardTitle>
-            <CardDescription>Todos os planos nutricionais que voce gerou</CardDescription>
+            <CardTitle className="text-lg" style={{ fontFamily: "'Fraunces', serif" }}>Histórico de planos</CardTitle>
+            <CardDescription>Todos os planos nutricionais que você gerou</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -119,7 +116,7 @@ export default function DashboardPage() {
                     <TableRow>
                       <TableHead>Data</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Acao</TableHead>
+                      <TableHead className="text-right">Ação</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -148,7 +145,7 @@ export default function DashboardPage() {
               <div className="text-center py-12">
                 <FileText className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
                 <p className="text-muted-foreground mb-1">Nenhum plano gerado ainda</p>
-                <p className="text-sm text-muted-foreground/70">Crie seu primeiro questionario para gerar um plano nutricional.</p>
+                <p className="text-sm text-muted-foreground/70">Crie seu primeiro questionário para gerar um plano nutricional.</p>
               </div>
             )}
           </CardContent>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppHeader } from '@/components/AppHeader';
@@ -18,6 +18,8 @@ export default function PlanViewerPage() {
   const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const planContentRef = useRef(null);
 
   useEffect(() => {
     const fetchPlan = async () => {
@@ -42,18 +44,28 @@ export default function PlanViewerPage() {
     }
   };
 
-  const handleDownload = () => {
-    if (!plan?.plan_markdown) return;
-    const blob = new Blob([plan.plan_markdown], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `plano-nutricional-${new Date(plan.created_at).toISOString().split('T')[0]}.md`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success('Plano baixado!');
+  const handleExportPDF = async () => {
+    if (!planContentRef.current || exporting) return;
+    setExporting(true);
+    toast.info('Gerando PDF... Aguarde.');
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      const element = planContentRef.current;
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `plano-nutricional-${new Date(plan.created_at).toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+      };
+      await html2pdf().set(opt).from(element).save();
+      toast.success('PDF baixado com sucesso!');
+    } catch (err) {
+      console.error('PDF export error:', err);
+      toast.error('Erro ao gerar PDF. Tente usar "Imprimir" do navegador (Ctrl+P).');
+    }
+    setExporting(false);
   };
 
   const formatDate = (dateStr) => {
@@ -66,15 +78,14 @@ export default function PlanViewerPage() {
     <div className="min-h-screen bg-background">
       <AppHeader />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-        {/* Back button and header */}
         <div className="flex items-center justify-between mb-6">
           <Button variant="ghost" size="sm" onClick={() => navigate('/app')} data-testid="plan-back-button">
             <ArrowLeft className="w-4 h-4 mr-1" /> Voltar ao dashboard
           </Button>
           {plan?.status === 'ready' && (
             <div className="flex items-center gap-2">
-              <Button variant="secondary" size="sm" onClick={handleDownload} data-testid="plan-download-button">
-                <Download className="w-4 h-4 mr-1" /> Baixar .md
+              <Button variant="secondary" size="sm" onClick={handleExportPDF} disabled={exporting} data-testid="plan-download-button">
+                <Download className="w-4 h-4 mr-1" /> {exporting ? 'Gerando...' : 'Exportar PDF'}
               </Button>
               <Button variant="secondary" size="sm" onClick={handleCopy} data-testid="plan-copy-button">
                 {copied ? <Check className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />}
@@ -94,19 +105,17 @@ export default function PlanViewerPage() {
           </div>
         ) : plan?.status === 'ready' ? (
           <div>
-            {/* Plan metadata */}
             <div className="flex items-center gap-3 mb-6">
               <Badge variant="outline" className="bg-[rgba(127,154,114,0.18)] text-[rgb(58,84,47)] border-[rgba(127,154,114,0.35)]" data-testid="plan-status-badge">Pronto</Badge>
               <span className="text-sm text-muted-foreground">Gerado em {formatDate(plan.created_at)}</span>
-              {plan.input_tokens && (
+              {plan.output_tokens && (
                 <span className="text-xs text-muted-foreground hidden sm:inline">
                   ({plan.output_tokens?.toLocaleString()} tokens)
                 </span>
               )}
             </div>
 
-            {/* Markdown content */}
-            <div className="bg-white rounded-2xl border border-border p-6 sm:p-10 shadow-sm" data-testid="plan-markdown-container">
+            <div ref={planContentRef} className="bg-white rounded-2xl border border-border p-6 sm:p-10 shadow-sm" data-testid="plan-markdown-container">
               <div className="plan-content">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {plan.plan_markdown}
@@ -122,7 +131,7 @@ export default function PlanViewerPage() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">Plano nao encontrado ou ainda sendo gerado.</p>
+            <p className="text-muted-foreground">Plano não encontrado ou ainda sendo gerado.</p>
           </div>
         )}
       </div>
