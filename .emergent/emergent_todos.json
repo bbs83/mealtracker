@@ -1,22 +1,34 @@
 [
   {
-    "content": "1. Upgrade model to opus 4.6, 8-min message, non-looping progress, better formatting, deeper nutritional analysis",
-    "status": "completed"
+    "content": "Phase 4.1: Backend - Plan target extraction endpoint + meal analysis with Sonnet",
+    "status": "in_progress"
   },
   {
-    "content": "2. Fix ALL accent marks throughout the entire app (PT-BR proper)",
-    "status": "completed"
+    "content": "Phase 4.2: Backend - Meal logs CRUD + calendar/weekly summary endpoints",
+    "status": "pending"
   },
   {
-    "content": "3. Clarify liquid intake field (additional to meals)",
-    "status": "completed"
+    "content": "Phase 4.3: Frontend - Tracker page with monthly calendar view",
+    "status": "pending"
   },
   {
-    "content": "4. Export plan as PDF instead of .md",
-    "status": "completed"
+    "content": "Phase 4.4: Frontend - Daily view with plan vs actual comparison",
+    "status": "pending"
   },
   {
-    "content": "5. Test all changes end to end",
-    "status": "completed"
+    "content": "Phase 4.5: Frontend - Meal log dialog (photo + text) with AI analysis",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 4.6: Frontend - Weekly summary with charts",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 4.7: Navigation update - Add Tracker to dashboard/header",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 4.8: End to end testing of full tracker flow",
+    "status": "pending"
   }
 ]
