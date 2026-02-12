@@ -29,7 +29,7 @@ export default function StepGoals({ data, update }) {
     <div className="space-y-6">
       <div className="mb-5">
         <h2 className="text-xl font-semibold mb-1" style={{ fontFamily: "'Fraunces', serif" }}>Seu objetivo</h2>
-        <p className="text-sm text-muted-foreground">O que voce quer alcancar com o plano nutricional?</p>
+        <p className="text-sm text-muted-foreground">O que você quer alcançar com o plano nutricional?</p>
       </div>
 
       <div>
@@ -49,14 +49,14 @@ export default function StepGoals({ data, update }) {
 
       {data.primary_goal === 'clinical' && (
         <div>
-          <label className="text-sm font-medium mb-1.5 block">Qual condicao voce quer controlar?</label>
-          <Textarea placeholder="Descreva a condicao clinica que deseja controlar..." value={data.clinical_goal_detail || ''} onChange={e => update('clinical_goal_detail', e.target.value)} rows={3} data-testid="form-clinical-goal-input" />
+          <label className="text-sm font-medium mb-1.5 block">Qual condição você quer controlar?</label>
+          <Textarea placeholder="Descreva a condição clínica que deseja controlar..." value={data.clinical_goal_detail || ''} onChange={e => update('clinical_goal_detail', e.target.value)} rows={3} data-testid="form-clinical-goal-input" />
         </div>
       )}
 
       <div>
         <label className="text-sm font-medium mb-1.5 block">Algo mais sobre seu objetivo?</label>
-        <p className="text-xs text-muted-foreground mb-1.5">Tem algum prazo em mente? Algum evento especifico?</p>
+        <p className="text-xs text-muted-foreground mb-1.5">Tem algum prazo em mente? Algum evento específico?</p>
         <Textarea placeholder="Ex: Quero emagrecer para o casamento em 6 meses..." value={data.goal_notes || ''} onChange={e => update('goal_notes', e.target.value)} rows={3} data-testid="form-goal-notes-input" />
       </div>
     </div>

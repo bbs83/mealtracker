@@ -13,7 +13,7 @@ const SectionTitle = ({ title, subtitle }) => (
 export default function StepPersonal({ data, update }) {
   return (
     <div className="space-y-6">
-      <SectionTitle title="Sobre voce" subtitle="Informacoes basicas para calcular suas necessidades nutricionais" />
+      <SectionTitle title="Sobre você" subtitle="Informações básicas para calcular suas necessidades nutricionais" />
       
       <div>
         <label className="text-sm font-medium mb-1.5 block">Nome completo <span className="text-destructive">*</span></label>
@@ -29,7 +29,7 @@ export default function StepPersonal({ data, update }) {
           </div>
         </div>
         <div>
-          <label className="text-sm font-medium mb-1.5 block">Sexo biologico <span className="text-destructive">*</span></label>
+          <label className="text-sm font-medium mb-1.5 block">Sexo biológico <span className="text-destructive">*</span></label>
           <Select value={data.sex || ''} onValueChange={v => update('sex', v)}>
             <SelectTrigger data-testid="form-sex-select">
               <SelectValue placeholder="Selecione" />
@@ -61,14 +61,14 @@ export default function StepPersonal({ data, update }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="text-sm font-medium mb-1.5 block">Circunferencia da cintura <span className="text-xs text-muted-foreground">(Opcional)</span></label>
+          <label className="text-sm font-medium mb-1.5 block">Circunferência da cintura <span className="text-xs text-muted-foreground">(Opcional)</span></label>
           <div className="relative">
             <Input type="number" placeholder="Ex: 82" value={data.waist || ''} onChange={e => update('waist', parseInt(e.target.value) || '')} data-testid="form-waist-input" />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">cm</span>
           </div>
         </div>
         <div>
-          <label className="text-sm font-medium mb-1.5 block">Circunferencia do quadril <span className="text-xs text-muted-foreground">(Opcional)</span></label>
+          <label className="text-sm font-medium mb-1.5 block">Circunferência do quadril <span className="text-xs text-muted-foreground">(Opcional)</span></label>
           <div className="relative">
             <Input type="number" placeholder="Ex: 98" value={data.hip || ''} onChange={e => update('hip', parseInt(e.target.value) || '')} data-testid="form-hip-input" />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">cm</span>
@@ -77,9 +77,9 @@ export default function StepPersonal({ data, update }) {
       </div>
 
       <div>
-        <label className="text-sm font-medium mb-1.5 block">Historico de peso</label>
-        <p className="text-xs text-muted-foreground mb-1.5">Seu peso mudou bastante nos ultimos anos? Ja fez dietas antes?</p>
-        <Textarea placeholder="Ex: Engordei 10kg nos ultimos 2 anos. Ja fiz low carb por 3 meses..." value={data.weight_history || ''} onChange={e => update('weight_history', e.target.value)} rows={3} data-testid="form-weight-history-input" />
+        <label className="text-sm font-medium mb-1.5 block">Histórico de peso</label>
+        <p className="text-xs text-muted-foreground mb-1.5">Seu peso mudou bastante nos últimos anos? Já fez dietas antes?</p>
+        <Textarea placeholder="Ex: Engordei 10kg nos últimos 2 anos. Já fiz low carb por 3 meses..." value={data.weight_history || ''} onChange={e => update('weight_history', e.target.value)} rows={3} data-testid="form-weight-history-input" />
       </div>
     </div>
   );

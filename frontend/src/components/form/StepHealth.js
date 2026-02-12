@@ -38,13 +38,10 @@ export default function StepHealth({ data, update }) {
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('Arquivo muito grande. Maximo 10MB.');
+      toast.error('Arquivo muito grande. Máximo 10MB.');
       return;
     }
-
     const reader = new FileReader();
     reader.onload = () => {
       const base64 = reader.result.split(',')[1];
@@ -67,34 +64,34 @@ export default function StepHealth({ data, update }) {
   return (
     <div className="space-y-6">
       <div className="mb-5">
-        <h2 className="text-xl font-semibold mb-1" style={{ fontFamily: "'Fraunces', serif" }}>Saude</h2>
-        <p className="text-sm text-muted-foreground">Informacoes sobre sua saude para um plano seguro e adequado</p>
+        <h2 className="text-xl font-semibold mb-1" style={{ fontFamily: "'Fraunces', serif" }}>Saúde</h2>
+        <p className="text-sm text-muted-foreground">Informações sobre sua saúde para um plano seguro e adequado</p>
       </div>
 
       <div>
-        <label className="text-sm font-medium mb-3 block">Condicoes de saude diagnosticadas</label>
+        <label className="text-sm font-medium mb-3 block">Condições de saúde diagnosticadas</label>
         <CheckboxGroup options={COMMON_CONDITIONS} selected={data.conditions || []} onChange={v => update('conditions', v)} testIdPrefix="form-condition" />
       </div>
 
       <div>
-        <label className="text-sm font-medium mb-1.5 block">Outras condicoes nao listadas acima</label>
-        <Textarea placeholder="Outras condicoes de saude..." value={data.other_conditions || ''} onChange={e => update('other_conditions', e.target.value)} rows={2} data-testid="form-other-conditions-input" />
+        <label className="text-sm font-medium mb-1.5 block">Outras condições não listadas acima</label>
+        <Textarea placeholder="Outras condições de saúde..." value={data.other_conditions || ''} onChange={e => update('other_conditions', e.target.value)} rows={2} data-testid="form-other-conditions-input" />
       </div>
 
       <div>
-        <label className="text-sm font-medium mb-3 block">Alergias e intolerancias alimentares</label>
+        <label className="text-sm font-medium mb-3 block">Alergias e intolerâncias alimentares</label>
         <CheckboxGroup options={COMMON_ALLERGIES} selected={data.allergies || []} onChange={v => update('allergies', v)} testIdPrefix="form-allergy" />
       </div>
 
       <div>
         <label className="text-sm font-medium mb-1.5 block">Outras alergias</label>
-        <Input placeholder="Ex: Camarao, kiwi..." value={data.other_allergies || ''} onChange={e => update('other_allergies', e.target.value)} data-testid="form-other-allergies-input" />
+        <Input placeholder="Ex: Camarão, kiwi..." value={data.other_allergies || ''} onChange={e => update('other_allergies', e.target.value)} data-testid="form-other-allergies-input" />
       </div>
 
       <div>
         <label className="text-sm font-medium mb-1.5 block">Medicamentos em uso</label>
         <p className="text-xs text-muted-foreground mb-1.5">Liste todos os medicamentos e suplementos que toma atualmente.</p>
-        <Textarea placeholder="Ex: Levotiroxina 75mcg (manha em jejum)" value={data.medications || ''} onChange={e => update('medications', e.target.value)} rows={3} data-testid="form-medications-input" />
+        <Textarea placeholder="Ex: Levotiroxina 75mcg (manhã em jejum)" value={data.medications || ''} onChange={e => update('medications', e.target.value)} rows={3} data-testid="form-medications-input" />
       </div>
 
       {/* Lab file upload */}
@@ -102,14 +99,7 @@ export default function StepHealth({ data, update }) {
         <label className="text-sm font-medium mb-1.5 block">Exames recentes</label>
         <p className="text-xs text-muted-foreground mb-3">Anexe uma foto ou PDF dos seus exames, ou descreva os valores manualmente abaixo.</p>
         
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*,.pdf"
-          onChange={handleFileUpload}
-          className="hidden"
-          data-testid="form-lab-file-input"
-        />
+        <input ref={fileInputRef} type="file" accept="image/*,.pdf" onChange={handleFileUpload} className="hidden" data-testid="form-lab-file-input" />
 
         {data.lab_file_name ? (
           <div className="flex items-center gap-3 p-3 rounded-xl border border-primary/30 bg-primary/5 mb-3" data-testid="form-lab-file-attached">
@@ -123,13 +113,7 @@ export default function StepHealth({ data, update }) {
             </Button>
           </div>
         ) : (
-          <Button
-            type="button"
-            variant="secondary"
-            className="mb-3"
-            onClick={() => fileInputRef.current?.click()}
-            data-testid="form-lab-file-upload-button"
-          >
+          <Button type="button" variant="secondary" className="mb-3" onClick={() => fileInputRef.current?.click()} data-testid="form-lab-file-upload-button">
             <Upload className="w-4 h-4 mr-2" /> Anexar exames (foto ou PDF)
           </Button>
         )}
@@ -138,9 +122,9 @@ export default function StepHealth({ data, update }) {
       </div>
 
       <div>
-        <label className="text-sm font-medium mb-1.5 block">Historico familiar</label>
-        <p className="text-xs text-muted-foreground mb-1.5">Doencas comuns na familia (pais, avos, irmaos).</p>
-        <Textarea placeholder="Ex: Mae com diabetes tipo 2, pai com hipertensao" value={data.family_history || ''} onChange={e => update('family_history', e.target.value)} rows={2} data-testid="form-family-history-input" />
+        <label className="text-sm font-medium mb-1.5 block">Histórico familiar</label>
+        <p className="text-xs text-muted-foreground mb-1.5">Doenças comuns na família (pais, avós, irmãos).</p>
+        <Textarea placeholder="Ex: Mãe com diabetes tipo 2, pai com hipertensão" value={data.family_history || ''} onChange={e => update('family_history', e.target.value)} rows={2} data-testid="form-family-history-input" />
       </div>
     </div>
   );
