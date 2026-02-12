@@ -361,6 +361,13 @@ class MealTrackAPITester:
         # Plan flow
         test_results.append(("List Plans", self.test_list_plans()))
         test_results.append(("Generate Plan", self.test_generate_plan()))
+        test_results.append(("Get Active Plan", self.test_get_active_plan()))
+        
+        # Tracker flow (meal logging)
+        test_results.append(("Create Meal Log", self.test_create_meal_log()))
+        test_results.append(("Get Meal Logs", self.test_get_meal_logs()))
+        test_results.append(("Get Meal Calendar", self.test_get_meal_calendar()))
+        test_results.append(("Get Weekly Summary", self.test_get_weekly_summary()))
         
         # Results summary
         self.log("=" * 50)
