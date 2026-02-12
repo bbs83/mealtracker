@@ -10,8 +10,8 @@ import { ChevronLeft, ChevronRight, Plus, Calendar, TrendingUp, AlertCircle } fr
 import axios from 'axios';
 import WeeklySummary from '@/components/tracker/WeeklySummary';
 
-const WEEKDAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'S\u00e1b'];
-const MONTH_LABELS = ['Janeiro', 'Fevereiro', 'Mar\u00e7o', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const WEEKDAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const MONTH_LABELS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
 const statusColors = {
   green: 'bg-[rgba(127,154,114,0.6)] border-[rgba(127,154,114,0.8)]',
@@ -80,10 +80,10 @@ export default function TrackerPage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-semibold" style={{ fontFamily: "'Fraunces', serif" }}>Tracker</h1>
-            <p className="text-sm text-muted-foreground">Acompanhe sua alimenta\u00e7\u00e3o di\u00e1ria</p>
+            <p className="text-sm text-muted-foreground">Acompanhe sua alimentação diária</p>
           </div>
           <Button onClick={() => navigate(`/app/tracker/${today}`)} data-testid="tracker-today-button">
-            <Plus className="w-4 h-4 mr-2" /> Registrar refei\u00e7\u00e3o
+            <Plus className="w-4 h-4 mr-2" /> Registrar refeição
           </Button>
         </div>
 
@@ -93,7 +93,7 @@ export default function TrackerPage() {
               <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0" />
               <div>
                 <p className="text-sm font-medium">Nenhum plano nutricional ativo</p>
-                <p className="text-xs text-muted-foreground">Gere um plano primeiro para comparar com sua alimenta\u00e7\u00e3o.</p>
+                <p className="text-xs text-muted-foreground">Gere um plano primeiro para comparar com sua alimentação.</p>
               </div>
               <Button size="sm" variant="secondary" onClick={() => navigate('/app/new')} className="shrink-0 ml-auto">Criar plano</Button>
             </CardContent>
@@ -104,10 +104,10 @@ export default function TrackerPage() {
         {activePlan?.targets && (
           <Card className="mb-6 rounded-xl">
             <CardContent className="p-4">
-              <p className="text-xs font-medium text-muted-foreground mb-2">META DI\u00c1RIA DO PLANO</p>
+              <p className="text-xs font-medium text-muted-foreground mb-2">META DIÁRIA DO PLANO</p>
               <div className="flex flex-wrap gap-4">
                 {[['Calorias', activePlan.targets.daily_targets.kcal, 'kcal'],
-                  ['Prote\u00edna', activePlan.targets.daily_targets.protein_g, 'g'],
+                  ['Proteína', activePlan.targets.daily_targets.protein_g, 'g'],
                   ['Carboidrato', activePlan.targets.daily_targets.carbs_g, 'g'],
                   ['Gordura', activePlan.targets.daily_targets.fat_g, 'g'],
                 ].map(([label, val, unit]) => (

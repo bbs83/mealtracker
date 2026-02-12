@@ -17,9 +17,9 @@ import { MEAL_DEFS } from '@/data/formConstants';
 import axios from 'axios';
 
 const MEAL_TYPE_LABELS = {
-  meal_breakfast: 'Caf\u00e9 da manh\u00e3',
-  meal_morning_snack: 'Lanche da manh\u00e3',
-  meal_lunch: 'Almo\u00e7o',
+  meal_breakfast: 'Café da manhã',
+  meal_morning_snack: 'Lanche da manhã',
+  meal_lunch: 'Almoço',
   meal_afternoon_snack: 'Lanche da tarde',
   meal_dinner: 'Jantar',
   meal_supper: 'Ceia',
@@ -96,7 +96,7 @@ export default function DayDetailPage() {
   const handlePhotoSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) { toast.error('Arquivo muito grande. M\u00e1ximo 10MB.'); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error('Arquivo muito grande. Máximo 10MB.'); return; }
     const reader = new FileReader();
     reader.onload = () => {
       setLogPhoto(reader.result.split(',')[1]);
@@ -108,7 +108,7 @@ export default function DayDetailPage() {
 
   const handleSubmitLog = async () => {
     if (!logPhoto && !logDescription.trim()) {
-      toast.error('Envie uma foto ou descreva a refei\u00e7\u00e3o');
+      toast.error('Envie uma foto ou descreva a refeição');
       return;
     }
     setSubmitting(true);
@@ -121,14 +121,14 @@ export default function DayDetailPage() {
         photo_media_type: logPhotoType || null,
       };
       await axios.post(`${API}/meal-logs`, payload, { headers: getAuthHeaders(), timeout: 60000 });
-      toast.success('Refei\u00e7\u00e3o registrada e analisada!');
+      toast.success('Refeição registrada e analisada!');
       setDialogOpen(false);
       setLogDescription('');
       setLogPhoto(null);
       setLogPhotoType(null);
       fetchData();
     } catch (err) {
-      toast.error('Erro ao registrar refei\u00e7\u00e3o. Tente novamente.');
+      toast.error('Erro ao registrar refeição. Tente novamente.');
     }
     setSubmitting(false);
   };
@@ -166,7 +166,7 @@ export default function DayDetailPage() {
         {/* Navigation */}
         <div className="flex items-center justify-between mb-6">
           <Button variant="ghost" size="sm" onClick={() => navigate('/app/tracker')} data-testid="day-back-button">
-            <ArrowLeft className="w-4 h-4 mr-1" /> Calend\u00e1rio
+            <ArrowLeft className="w-4 h-4 mr-1" /> Calendário
           </Button>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={prevDay}><ChevronLeft className="w-4 h-4" /></Button>
@@ -192,7 +192,7 @@ export default function DayDetailPage() {
                 </Badge>
               </div>
               <MacroBar label="Calorias" value={dailyTotals.kcal} target={targets.kcal} unit="kcal" />
-              <MacroBar label="Prote\u00edna" value={dailyTotals.protein_g} target={targets.protein_g} />
+              <MacroBar label="Proteína" value={dailyTotals.protein_g} target={targets.protein_g} />
               <MacroBar label="Carboidrato" value={dailyTotals.carbs_g} target={targets.carbs_g} />
               <MacroBar label="Gordura" value={dailyTotals.fat_g} target={targets.fat_g} />
             </CardContent>
@@ -203,16 +203,16 @@ export default function DayDetailPage() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button className="w-full mb-6 h-12" data-testid="add-meal-button">
-              <Plus className="w-4 h-4 mr-2" /> Registrar refei\u00e7\u00e3o
+              <Plus className="w-4 h-4 mr-2" /> Registrar refeição
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle style={{ fontFamily: "'Fraunces', serif" }}>Registrar refei\u00e7\u00e3o</DialogTitle>
+              <DialogTitle style={{ fontFamily: "'Fraunces', serif" }}>Registrar refeição</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Tipo de refei\u00e7\u00e3o</label>
+                <label className="text-sm font-medium mb-1.5 block">Tipo de refeição</label>
                 <Select value={logMealType} onValueChange={setLogMealType}>
                   <SelectTrigger data-testid="meal-type-select">
                     <SelectValue />
@@ -234,7 +234,7 @@ export default function DayDetailPage() {
                   <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoSelect} className="hidden" />
                   <Button variant="secondary" className="w-full h-24 border-dashed border-2" onClick={() => fileRef.current?.click()} data-testid="meal-photo-button">
                     {logPhoto ? (
-                      <span className="text-primary font-medium">Foto selecionada \u2714</span>
+                      <span className="text-primary font-medium">Foto selecionada ✔</span>
                     ) : (
                       <div className="text-center">
                         <Camera className="w-6 h-6 mx-auto mb-1 text-muted-foreground" />
@@ -245,7 +245,7 @@ export default function DayDetailPage() {
                 </TabsContent>
                 <TabsContent value="text" className="mt-3">
                   <Textarea
-                    placeholder="Descreva o que comeu com detalhes e quantidades...\nEx: 4 col. sopa de arroz, 1 concha de feij\u00e3o, 150g de frango grelhado, salada"
+                    placeholder="Descreva o que comeu com detalhes e quantidades...\nEx: 4 col. sopa de arroz, 1 concha de feijão, 150g de frango grelhado, salada"
                     value={logDescription}
                     onChange={e => setLogDescription(e.target.value)}
                     rows={4}
@@ -326,8 +326,8 @@ export default function DayDetailPage() {
         ) : (
           <div className="text-center py-12">
             <Camera className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
-            <p className="text-muted-foreground mb-1">Nenhuma refei\u00e7\u00e3o registrada</p>
-            <p className="text-sm text-muted-foreground/70">Registre o que voc\u00ea comeu para acompanhar sua alimenta\u00e7\u00e3o.</p>
+            <p className="text-muted-foreground mb-1">Nenhuma refeição registrada</p>
+            <p className="text-sm text-muted-foreground/70">Registre o que você comeu para acompanhar sua alimentação.</p>
           </div>
         )}
       </div>
