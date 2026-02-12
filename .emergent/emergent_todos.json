@@ -1,23 +1,23 @@
 [
   {
     "content": "Phase 1: POC - Claude nutrition plan generation",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
-    "content": "Phase 1: Set up Emergent LLM key and test Claude API",
-    "status": "in_progress"
+    "content": "Phase 1: Set up Anthropic API key and test Claude API",
+    "status": "completed"
   },
   {
     "content": "Phase 1: Create and run POC test script",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Phase 1: Validate output contains all 5 ETAPA sections + disclaimer",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Phase 2: Design guidelines from design agent",
-    "status": "pending"
+    "status": "in_progress"
   },
   {
     "content": "Phase 2: Backend implementation (FastAPI + MongoDB)",
