@@ -60,8 +60,14 @@ class UserLogin(BaseModel):
     email: str
     password: str
 
+class LabFile(BaseModel):
+    base64: str
+    media_type: str
+    name: str = "exames"
+
 class AssessmentCreate(BaseModel):
     patient_data: Dict[str, Any]
+    lab_file: Optional[LabFile] = None
 
 class GeneratePlanRequest(BaseModel):
     pass
