@@ -118,7 +118,7 @@ export default function NewAssessmentPage() {
       const planRes = await axios.post(
         `${API}/assessments/${assessmentId}/generate-plan`,
         {},
-        { headers: getAuthHeaders(), timeout: 300000 }
+        { headers: getAuthHeaders(), timeout: 600000 } // 10 min timeout for opus
       );
 
       if (planRes.data.status === 'ready') {
