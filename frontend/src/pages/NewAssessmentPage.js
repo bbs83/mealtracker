@@ -18,6 +18,38 @@ import StepWomen from '@/components/form/StepWomen';
 import StepReview from '@/components/form/StepReview';
 import GeneratingScreen from '@/components/form/GeneratingScreen';
 
+// Clean data before submission - remove empty fields, files, and calculate derived fields
+const cleanFormData = (data) => {
+  const cleaned = {};
+  
+  for (const [key, value] of Object.entries(data)) {
+    // Skip internal file data (sent separately)
+    if (key === 'lab_file_base64' || key === 'lab_file_media_type') continue;
+    
+    // Skip empty values
+    if (value === '' || value === null || value === undefined) continue;
+    if (Array.isArray(value) && value.length === 0) continue;
+    
+    cleaned[key] = value;
+  }
+
+  // Auto-calculate sleep hours if we have both times
+  if (cleaned.wake_time && cleaned.sleep_time) {
+    const [wH, wM] = cleaned.wake_time.split(':').map(Number);
+    const [sH, sM] = cleaned.sleep_time.split(':').map(Number);
+    let diff = (wH * 60 + wM) - (sH * 60 + sM);
+    if (diff <= 0) diff += 1440;
+    cleaned.sleep_hours_calculated = `${Math.floor(diff / 60)}h${(diff % 60).toString().padStart(2, '0')}`;
+  }
+
+  // If lab file was attached, mark it
+  if (data.lab_file_name) {
+    cleaned.lab_file_attached = data.lab_file_name;
+  }
+
+  return cleaned;
+};
+
 export default function NewAssessmentPage() {
   const { getAuthHeaders, API } = useAuth();
   const navigate = useNavigate();
@@ -59,10 +91,25 @@ export default function NewAssessmentPage() {
     setSubmitting(true);
     setGenerating(true);
     try {
+      // Clean data before sending
+      const cleanedData = cleanFormData(data);
+
+      // Prepare lab file info for backend
+      const payload = {
+        patient_data: cleanedData,
+      };
+      if (data.lab_file_base64 && data.lab_file_media_type) {
+        payload.lab_file = {
+          base64: data.lab_file_base64,
+          media_type: data.lab_file_media_type,
+          name: data.lab_file_name || 'exames',
+        };
+      }
+
       // Create assessment
       const assessmentRes = await axios.post(
         `${API}/assessments`,
-        { patient_data: data },
+        payload,
         { headers: getAuthHeaders() }
       );
       const assessmentId = assessmentRes.data.id;
@@ -71,7 +118,7 @@ export default function NewAssessmentPage() {
       const planRes = await axios.post(
         `${API}/assessments/${assessmentId}/generate-plan`,
         {},
-        { headers: getAuthHeaders(), timeout: 300000 } // 5 min timeout for AI gen
+        { headers: getAuthHeaders(), timeout: 300000 }
       );
 
       if (planRes.data.status === 'ready') {

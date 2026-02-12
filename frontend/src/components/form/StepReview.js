@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { REVIEW_SECTIONS, FIELD_LABELS } from '@/data/formConstants';
+import { REVIEW_SECTIONS, FIELD_LABELS, WEEKDAYS, MEAL_DEFS } from '@/data/formConstants';
 import { Pencil } from 'lucide-react';
 
 const VALUE_MAP = {
@@ -16,6 +16,7 @@ const VALUE_MAP = {
   normal: 'Normal', hard: 'Ressecada', loose: 'Amolecida', variable: 'Variavel',
   tight: 'Economico', flexible: 'Flexivel',
   regular: 'Regular', irregular: 'Irregular', absent: 'Ausente', menopause: 'Menopausa', perimenopause: 'Perimenopausa',
+  fasted: 'Em jejum', after_meal: 'Apos refeicao', varies: 'Varia',
 };
 
 const formatValue = (value) => {
@@ -26,7 +27,19 @@ const formatValue = (value) => {
   return VALUE_MAP[value] || String(value);
 };
 
+// Count how many days have recall data
+const countRecallDays = (data) => {
+  let count = 0;
+  WEEKDAYS.forEach(day => {
+    const hasData = MEAL_DEFS.some(meal => data[`recall_${day.key}_${meal.key}`]) || data[`recall_${day.key}_extras`];
+    if (hasData) count++;
+  });
+  return count;
+};
+
 export default function StepReview({ data, goToStep }) {
+  const recallDays = countRecallDays(data);
+
   return (
     <div className="space-y-6">
       <div className="mb-5">
@@ -35,11 +48,10 @@ export default function StepReview({ data, goToStep }) {
       </div>
 
       {REVIEW_SECTIONS.map(section => {
-        // Skip women section if not female
         if (section.id === 'women' && data.sex !== 'female') return null;
         
         const filledFields = section.fields.filter(f => formatValue(data[f]) !== null);
-        if (filledFields.length === 0) return null;
+        if (filledFields.length === 0 && section.id !== 'eating') return null;
 
         return (
           <Card key={section.id} className="rounded-xl" data-testid={`review-section-${section.id}`}>
@@ -57,6 +69,13 @@ export default function StepReview({ data, goToStep }) {
                     <span className="text-sm text-right">{formatValue(data[field])}</span>
                   </div>
                 ))}
+                {/* Show recall summary for eating section */}
+                {section.id === 'eating' && recallDays > 0 && (
+                  <div className="flex justify-between items-start py-1.5 border-b border-border/50 last:border-0">
+                    <span className="text-xs text-muted-foreground shrink-0 mr-4">Recordatorio semanal</span>
+                    <span className="text-sm text-right text-primary font-medium">{recallDays} dia(s) preenchido(s)</span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
