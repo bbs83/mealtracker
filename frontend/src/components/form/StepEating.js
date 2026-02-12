@@ -161,8 +161,8 @@ export default function StepEating({ data, update }) {
       </div>
 
       <div>
-        <label className="text-sm font-medium mb-1.5 block">Orcamento mensal para alimentacao</label>
-        <p className="text-xs text-muted-foreground mb-1.5">Para adequarmos as sugestoes a sua realidade.</p>
+        <label className="text-sm font-medium mb-1.5 block">Orçamento mensal para alimentação</label>
+        <p className="text-xs text-muted-foreground mb-1.5">Para adequarmos as sugestões à sua realidade.</p>
         <Select value={data.budget || ''} onValueChange={v => update('budget', v)}>
           <SelectTrigger className="max-w-xs" data-testid="form-budget-select">
             <SelectValue placeholder="Selecione" />
