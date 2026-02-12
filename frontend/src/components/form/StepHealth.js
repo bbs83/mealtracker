@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import { COMMON_CONDITIONS, COMMON_ALLERGIES } from '@/data/formConstants';
+import { Upload, X, FileText } from 'lucide-react';
+import { toast } from 'sonner';
 
 const CheckboxGroup = ({ options, selected = [], onChange, testIdPrefix }) => (
   <div className="flex flex-wrap gap-2">
@@ -30,6 +33,37 @@ const CheckboxGroup = ({ options, selected = [], onChange, testIdPrefix }) => (
 );
 
 export default function StepHealth({ data, update }) {
+  const fileInputRef = useRef(null);
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Arquivo muito grande. Maximo 10MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result.split(',')[1];
+      const mediaType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+      update('lab_file_base64', base64);
+      update('lab_file_media_type', mediaType);
+      update('lab_file_name', file.name);
+      toast.success(`Arquivo "${file.name}" anexado com sucesso!`);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeFile = () => {
+    update('lab_file_base64', null);
+    update('lab_file_media_type', null);
+    update('lab_file_name', null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   return (
     <div className="space-y-6">
       <div className="mb-5">
@@ -63,10 +97,44 @@ export default function StepHealth({ data, update }) {
         <Textarea placeholder="Ex: Levotiroxina 75mcg (manha em jejum)" value={data.medications || ''} onChange={e => update('medications', e.target.value)} rows={3} data-testid="form-medications-input" />
       </div>
 
+      {/* Lab file upload */}
       <div>
         <label className="text-sm font-medium mb-1.5 block">Exames recentes</label>
-        <p className="text-xs text-muted-foreground mb-1.5">Se tiver resultados de exames de sangue recentes, compartilhe aqui os valores mais relevantes.</p>
-        <Textarea placeholder="Ex: TSH: 3.2, Glicemia: 92, Colesterol: 210..." value={data.lab_results || ''} onChange={e => update('lab_results', e.target.value)} rows={3} data-testid="form-lab-results-input" />
+        <p className="text-xs text-muted-foreground mb-3">Anexe uma foto ou PDF dos seus exames, ou descreva os valores manualmente abaixo.</p>
+        
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,.pdf"
+          onChange={handleFileUpload}
+          className="hidden"
+          data-testid="form-lab-file-input"
+        />
+
+        {data.lab_file_name ? (
+          <div className="flex items-center gap-3 p-3 rounded-xl border border-primary/30 bg-primary/5 mb-3" data-testid="form-lab-file-attached">
+            <FileText className="w-5 h-5 text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{data.lab_file_name}</p>
+              <p className="text-xs text-muted-foreground">Arquivo anexado</p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={removeFile} className="shrink-0" data-testid="form-lab-file-remove">
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        ) : (
+          <Button
+            type="button"
+            variant="secondary"
+            className="mb-3"
+            onClick={() => fileInputRef.current?.click()}
+            data-testid="form-lab-file-upload-button"
+          >
+            <Upload className="w-4 h-4 mr-2" /> Anexar exames (foto ou PDF)
+          </Button>
+        )}
+
+        <Textarea placeholder="Ou descreva aqui: TSH: 3.2, Glicemia: 92, Colesterol: 210..." value={data.lab_results || ''} onChange={e => update('lab_results', e.target.value)} rows={3} data-testid="form-lab-results-input" />
       </div>
 
       <div>

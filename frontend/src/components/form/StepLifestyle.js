@@ -2,7 +2,8 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { ACTIVITY_LEVELS, STRESS_LEVELS } from '@/data/formConstants';
+import { ACTIVITY_LEVELS, STRESS_LEVELS, EXERCISE_MEAL_TIMING } from '@/data/formConstants';
+import { Clock } from 'lucide-react';
 
 const RadioCards = ({ options, value, onChange, testIdPrefix }) => (
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -25,7 +26,28 @@ const RadioCards = ({ options, value, onChange, testIdPrefix }) => (
   </div>
 );
 
+// Auto-calculate sleep duration
+const calcSleepHours = (wake, sleep) => {
+  if (!wake || !sleep) return null;
+  const [wH, wM] = wake.split(':').map(Number);
+  const [sH, sM] = sleep.split(':').map(Number);
+  let diff = (wH * 60 + wM) - (sH * 60 + sM);
+  if (diff <= 0) diff += 1440;
+  const h = Math.floor(diff / 60);
+  const m = (diff % 60).toString().padStart(2, '0');
+  return `${h}h${m}`;
+};
+
 export default function StepLifestyle({ data, update }) {
+  const sleepDuration = calcSleepHours(data.wake_time, data.sleep_time);
+
+  // Auto-update the calculated field
+  React.useEffect(() => {
+    if (sleepDuration && data.sleep_hours_calculated !== sleepDuration) {
+      update('sleep_hours_calculated', sleepDuration);
+    }
+  }, [sleepDuration]);
+
   return (
     <div className="space-y-6">
       <div className="mb-5">
@@ -33,7 +55,7 @@ export default function StepLifestyle({ data, update }) {
         <p className="text-sm text-muted-foreground">Sua rotina diaria, atividade fisica e habitos</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="text-sm font-medium mb-1.5 block">Acorda que horas?</label>
           <Input type="time" value={data.wake_time || ''} onChange={e => update('wake_time', e.target.value)} data-testid="form-wake-time-input" />
@@ -42,14 +64,18 @@ export default function StepLifestyle({ data, update }) {
           <label className="text-sm font-medium mb-1.5 block">Dorme que horas?</label>
           <Input type="time" value={data.sleep_time || ''} onChange={e => update('sleep_time', e.target.value)} data-testid="form-sleep-time-input" />
         </div>
-        <div>
-          <label className="text-sm font-medium mb-1.5 block">Horas de sono/noite</label>
-          <div className="relative">
-            <Input type="number" placeholder="Ex: 7" min={1} max={16} value={data.sleep_hours || ''} onChange={e => update('sleep_hours', parseInt(e.target.value) || '')} data-testid="form-sleep-hours-input" />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">h</span>
+      </div>
+
+      {/* Auto-calculated sleep duration info card */}
+      {sleepDuration && (
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-primary/5 border border-primary/20" data-testid="form-sleep-duration-card">
+          <Clock className="w-5 h-5 text-primary shrink-0" />
+          <div>
+            <div className="text-sm font-medium">Duracao estimada do sono</div>
+            <div className="text-lg font-semibold text-primary" style={{ fontFamily: "'Fraunces', serif" }}>{sleepDuration}</div>
           </div>
         </div>
-      </div>
+      )}
 
       <div>
         <label className="text-sm font-medium mb-3 block">Nivel de atividade fisica <span className="text-destructive">*</span></label>
@@ -57,11 +83,24 @@ export default function StepLifestyle({ data, update }) {
       </div>
 
       {data.activity_level && data.activity_level !== 'sedentary' && (
-        <div>
-          <label className="text-sm font-medium mb-1.5 block">Quais exercicios voce pratica?</label>
-          <p className="text-xs text-muted-foreground mb-1.5">Tipo, frequencia e duracao de cada um.</p>
-          <Textarea placeholder="Ex: Musculacao 3x/semana, corrida 2x/semana 30min" value={data.exercise_detail || ''} onChange={e => update('exercise_detail', e.target.value)} rows={3} data-testid="form-exercise-detail-input" />
-        </div>
+        <>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Quais exercicios voce pratica?</label>
+            <p className="text-xs text-muted-foreground mb-1.5">Tipo, frequencia e duracao de cada um.</p>
+            <Textarea placeholder="Ex: Musculacao 3x/semana, corrida 2x/semana 30min" value={data.exercise_detail || ''} onChange={e => update('exercise_detail', e.target.value)} rows={3} data-testid="form-exercise-detail-input" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Horario do treino</label>
+              <Input type="time" value={data.exercise_time || ''} onChange={e => update('exercise_time', e.target.value)} data-testid="form-exercise-time-input" />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Treina em jejum ou apos refeicao?</label>
+              <RadioCards options={EXERCISE_MEAL_TIMING} value={data.exercise_meal_timing} onChange={v => update('exercise_meal_timing', v)} testIdPrefix="form-exercise-timing" />
+            </div>
+          </div>
+        </>
       )}
 
       <div>
