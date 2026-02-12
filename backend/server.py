@@ -87,7 +87,7 @@ Com base nos dados do paciente acima, elabore um **plano nutricional completo e 
 
 ## ETAPA 1 — Avaliação Inicial
 
-Antes de montar o plano, faça os cálculos e análises necessários. Apresente-os de forma clara.
+Antes de montar o plano, faça os cálculos e análises necessários. Apresente-os de forma clara e visualmente organizada.
 
 ### 1.1 Cálculo do Gasto Energético
 - Calcule a **Taxa Metabólica Basal (TMB)** usando a fórmula de Mifflin-St Jeor:
@@ -104,9 +104,10 @@ Antes de montar o plano, faça os cálculos e análises necessários. Apresente-
   - Ganho de massa: superávit de 10-20% sobre o GET
   - Manutenção: GET
   - Para outros objetivos, ajuste conforme indicado clinicamente
+- Apresente os cálculos numa tabela resumo clara.
 
 ### 1.2 Distribuição de Macronutrientes
-Defina a distribuição de macros (proteínas, carboidratos, gorduras) em gramas e percentual, justificando a escolha com base no objetivo, nível de atividade e condições clínicas do paciente.
+Defina a distribuição de macros (proteínas, carboidratos, gorduras) em gramas e percentual, justificando a escolha com base no objetivo, nível de atividade e condições clínicas do paciente. Apresente numa tabela.
 
 Diretrizes gerais (ajuste conforme contexto clínico):
 - **Proteína**: 1,2-2,0g/kg de peso corporal
@@ -119,9 +120,29 @@ Diretrizes gerais (ajuste conforme contexto clínico):
 - Considere interações medicamento-nutriente relevantes.
 - Se o paciente for gestante ou lactante, ajuste as necessidades.
 
-### 1.4 Análise dos Hábitos Atuais
-- Com base no recordatório alimentar, identifique pontos positivos, gaps nutricionais e padrões problemáticos.
-- Considere o orçamento, quem prepara as refeições e a rotina de horários.
+### 1.4 Análise Detalhada da Alimentação Atual
+
+**IMPORTANTE**: Faça uma análise APROFUNDADA e DETALHADA do recordatório alimentar semanal do paciente. Para cada dia informado:
+
+1. **Estime as calorias e macronutrientes** de cada refeição relatada (proteínas, carboidratos, gorduras, fibras).
+2. **Calcule os totais diários estimados** para cada dia da semana.
+3. **Monte uma tabela comparativa** mostrando:
+   - Calorias estimadas por dia vs. meta calórica
+   - Proteína estimada por dia vs. meta
+   - Carboidrato estimado por dia vs. meta
+   - Gordura estimada por dia vs. meta
+   - Fibra estimada por dia vs. meta (25g/dia)
+4. **Calcule a média semanal** de cada nutriente.
+5. **Identifique claramente**:
+   - Déficits nutricionais específicos (ex: "déficit médio de 40g de proteína/dia")
+   - Excessos nutricionais (ex: "excesso médio de 30g de carboidrato refinado")
+   - Micronutrientes possivelmente deficientes com base nos alimentos consumidos
+   - Qualidade das gorduras consumidas (saturadas vs. insaturadas)
+   - Ingestão de fibras e qualidade dos carboidratos
+6. **Pontos positivos** a manter na alimentação atual.
+7. **Padrões problemáticos** identificados (pular refeições, excesso de ultraprocessados, baixa ingestão de proteínas, etc.).
+
+Considere o orçamento, quem prepara as refeições e a rotina de horários ao planejar.
 
 ---
 
@@ -130,12 +151,13 @@ Diretrizes gerais (ajuste conforme contexto clínico):
 Monte um cardápio detalhado para **7 dias (segunda a domingo)**.
 
 ### Estrutura de cada dia:
+Para cada refeição, apresente numa **tabela organizada**:
 - **Horário sugerido**
 - **Alimentos e quantidades** em medidas caseiras E em gramas/ml entre parênteses
 - **Calorias e macros da refeição** (kcal | P: Xg | C: Xg | G: Xg)
 
 ### Refeições do dia:
-Adapte o número de refeições ao que o paciente informou.
+Adapte o número de refeições ao que o paciente informou como viáveis (campos meal_breakfast, meal_morning_snack, meal_lunch, meal_afternoon_snack, meal_dinner, meal_supper).
 
 ### Regras do cardápio:
 - Respeite todas as alergias e intolerâncias
@@ -147,48 +169,57 @@ Adapte o número de refeições ao que o paciente informou.
 - Adapte ao orçamento informado
 - Inclua pelo menos 25g de fibra por dia
 - Distribua a ingestão proteica ao longo do dia (mínimo 20g por refeição principal)
-- Ao final de cada dia, apresente o **total diário** (kcal | P | C | G | Fibra)
+- Considere o horário do treino e a preferência de treinar em jejum ou após refeição, se informado
+- Ao final de cada dia, apresente o **total diário** numa tabela (kcal | P | C | G | Fibra)
 
 ---
 
 ## ETAPA 3 — Tabela de Substituições
 
-Crie uma tabela de equivalências organizada por grupo alimentar com pelo menos 3-4 substitutos por alimento base.
+Crie uma tabela de equivalências organizada por grupo alimentar com pelo menos 3-4 substitutos por alimento base, respeitando as restrições do paciente. Use formato de tabela limpo e organizado.
 
 ---
 
 ## ETAPA 4 — Orientações Gerais
 
-1. **Hidratação**
-2. **Orientações para sintomas digestivos**
-3. **Orientações para condições clínicas**
-4. **Dicas de preparo e organização**
-5. **Orientações para comer fora**
+Apresente orientações práticas e personalizadas, organizadas com subtítulos claros:
+
+1. **Hidratação**: Meta diária de água com base no peso (mínimo 35ml/kg) e ajustes para atividade física. Compare com o consumo atual informado.
+2. **Orientações para sintomas digestivos**: Se o paciente reportou sintomas GI, inclua orientações específicas.
+3. **Orientações para condições clínicas**: Dicas alimentares específicas para cada condição diagnosticada.
+4. **Dicas de preparo e organização**: Sugestões de meal prep, organização semanal, como montar marmitas.
+5. **Orientações para comer fora**: Se aplicável, como fazer boas escolhas em restaurantes.
 
 ---
 
 ## ETAPA 5 — Resumo Executivo
 
-- Meta calórica diária e distribuição de macros
-- 3 principais mudanças recomendadas
-- Alertas importantes
-- Sugestão de reavaliação
+Ao final, apresente um resumo visual e conciso com:
+
+- Meta calórica diária e distribuição de macros (em tabela)
+- 3-5 principais mudanças recomendadas em relação à alimentação atual
+- Alertas importantes (clínicos, interações, deficiências a monitorar)
+- Sugestão de reavaliação (quando o paciente deve retornar / ajustar o plano)
 
 ---
 
 ## Regras de formatação do output:
-- Use linguagem acessível e acolhedora
-- Trate o paciente pelo nome informado
-- Evite jargão técnico sem explicação
-- Use tabelas para o cardápio e substituições
-- Use emojis com moderação (apenas em títulos de seção)
-- Estruture com títulos e subtítulos claros (markdown)
-- O documento deve ter entre 3.000-5.000 palavras
+- Use linguagem acessível e acolhedora — o paciente vai ler diretamente.
+- Trate o paciente pelo nome informado.
+- Evite jargão técnico sem explicação. Quando usar termos técnicos, explique entre parênteses.
+- Use **tabelas** para o cardápio, substituições, cálculos e comparativos — tabelas tornam o documento mais profissional e fácil de ler.
+- Use emojis com moderação (apenas em títulos de seção) para tornar o documento mais visual.
+- Estruture com títulos e subtítulos claros (markdown com ## e ###).
+- Use **negrito** para destacar informações importantes.
+- Use linhas horizontais (---) para separar seções.
+- O documento deve ter entre 4.000-6.000 palavras para ser completo e detalhado.
 
 ## Regras de segurança:
-- Inclua um disclaimer claro no início
-- Nunca recomende suplementação específica
-- Não prescreva dietas abaixo de 1200 kcal (mulheres) ou 1500 kcal (homens)"""
+- Este plano é uma ferramenta de apoio e NÃO substitui o acompanhamento profissional presencial.
+- Inclua um disclaimer claro e visível no início do documento informando isso.
+- Se os dados indicarem condições clínicas graves, reforce a necessidade de acompanhamento médico e nutricional presencial.
+- Nunca recomende suplementação específica — limite-se a sugerir que o paciente converse com seu nutricionista ou médico.
+- Não prescreva dietas abaixo de 1200 kcal (mulheres) ou 1500 kcal (homens)."""
 
 # ============ AUTH ROUTES ============
 import bcrypt
