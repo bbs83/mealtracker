@@ -1,42 +1,42 @@
 [
   {
     "content": "Implement meal availability toggles (breakfast, morning snack, lunch, afternoon snack, dinner, supper)",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Implement Weekly Food Recall component (7 days x enabled meals + extras per day)",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Add exercise timing fields (exercise_time, exercise_meal_timing)",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Add sleep hours auto-calculation with info card display",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Implement lab file upload (image/PDF) with base64 encoding",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Improve generation loading screen with elapsed timer and phase messages",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Add download plan as .md file button",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Update prompt/backend to support multimodal lab file submission",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Add data cleaning before submission (remove empty fields, calculate sleep)",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "End to end testing of all improvements",
-    "status": "pending"
+    "status": "in_progress"
   }
 ]
