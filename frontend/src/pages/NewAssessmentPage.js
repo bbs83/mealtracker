@@ -130,7 +130,7 @@ export default function NewAssessmentPage() {
       }
     } catch (err) {
       console.error('Error generating plan:', err);
-      toast.error('Erro ao gerar o plano. Verifique sua conexao e tente novamente.');
+      toast.error('Erro ao gerar o plano. Verifique sua conexão e tente novamente.');
       setGenerating(false);
     }
     setSubmitting(false);
