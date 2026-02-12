@@ -1,0 +1,147 @@
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { AppHeader } from '@/components/AppHeader';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { ClipboardList, Sparkles, UtensilsCrossed, ArrowRight, Leaf, Heart, Scale, Apple } from 'lucide-react';
+
+export default function LandingPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  React.useEffect(() => {
+    if (user) navigate('/app', { replace: true });
+  }, [user, navigate]);
+
+  return (
+    <div className="min-h-screen bg-background">
+      <AppHeader />
+      
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(1200px 600px at 15% 10%, rgba(201,123,99,0.18), transparent 55%), radial-gradient(900px 520px at 85% 0%, rgba(127,154,114,0.18), transparent 55%), radial-gradient(800px 500px at 50% 110%, rgba(214,161,74,0.12), transparent 55%)' }} />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-16 sm:pb-20 relative">
+          <div className="max-w-3xl">
+            <div className="flex items-center gap-2 mb-6">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                <Sparkles className="w-3 h-3" /> Powered by AI
+              </span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight mb-6" style={{ fontFamily: "'Fraunces', serif" }} data-testid="landing-hero-title">
+              Seu plano nutricional personalizado em minutos
+            </h1>
+            <p className="text-lg sm:text-xl text-muted-foreground leading-8 mb-8 max-w-2xl">
+              Preencha um questionario completo sobre sua saude, rotina e objetivos. Nossa inteligencia artificial cria um plano alimentar de 7 dias totalmente adaptado a voce.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button size="lg" className="h-13 px-8 text-base" onClick={() => navigate('/signup')} data-testid="landing-primary-cta-button">
+                Comecar agora <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+              <Button variant="secondary" size="lg" className="h-13 px-8 text-base" onClick={() => navigate('/login')} data-testid="landing-secondary-cta-button">
+                Ja tenho conta
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="py-16 sm:py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-4" style={{ fontFamily: "'Fraunces', serif" }}>Como funciona</h2>
+          <p className="text-muted-foreground text-center mb-12 max-w-xl mx-auto">Tres passos simples para ter seu plano nutricional pronto</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { icon: ClipboardList, title: 'Preencha o questionario', desc: 'Responda perguntas sobre sua saude, rotina, preferencias alimentares e objetivos. Leva cerca de 8-10 minutos.', step: '1' },
+              { icon: Sparkles, title: 'IA gera seu plano', desc: 'Nossa inteligencia artificial analisa seus dados e cria um plano nutricional completo e personalizado.', step: '2' },
+              { icon: UtensilsCrossed, title: 'Receba seu cardapio', desc: 'Acesse seu plano de 7 dias com substituicoes, orientacoes e resumo executivo. Tudo na sua area logada.', step: '3' },
+            ].map((item) => (
+              <Card key={item.step} className="rounded-2xl border border-border bg-card hover:shadow-lg hover:-translate-y-0.5 transition-shadow duration-200 transition-transform duration-200" data-testid={`landing-step-${item.step}-card`}>
+                <CardContent className="p-6 sm:p-8">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+                    <item.icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="text-xs font-medium text-muted-foreground mb-2">PASSO {item.step}</div>
+                  <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: "'Fraunces', serif" }}>{item.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-6">{item.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* What you get */}
+      <section className="py-16 sm:py-20 bg-card">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-4" style={{ fontFamily: "'Fraunces', serif" }}>O que voce recebe</h2>
+          <p className="text-muted-foreground text-center mb-12 max-w-xl mx-auto">Um plano nutricional completo com 5 secoes detalhadas</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { icon: Scale, title: 'Avaliacao Inicial', desc: 'Calculo de TMB, gasto energetico, distribuicao de macros e analise clinica completa.' },
+              { icon: UtensilsCrossed, title: 'Cardapio de 7 dias', desc: 'Plano alimentar detalhado com horarios, quantidades, calorias e macros por refeicao.' },
+              { icon: Apple, title: 'Tabela de Substituicoes', desc: 'Flexibilidade para trocar alimentos mantendo o equilibrio nutricional.' },
+              { icon: Heart, title: 'Orientacoes Gerais', desc: 'Hidratacao, saude digestiva, dicas de preparo e orientacoes para comer fora.' },
+              { icon: Leaf, title: 'Resumo Executivo', desc: 'Meta calorica, principais mudancas recomendadas e alertas importantes.' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-start gap-4 p-5 rounded-xl border border-border/50 bg-background">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <item.icon className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
+                  <p className="text-xs text-muted-foreground leading-5">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-16 sm:py-20">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-12" style={{ fontFamily: "'Fraunces', serif" }}>Perguntas frequentes</h2>
+          <Accordion type="single" collapsible className="space-y-2">
+            {[
+              { q: 'O plano substitui um nutricionista?', a: 'Nao. O MealTrack e uma ferramenta de apoio que gera sugestoes baseadas em IA. Recomendamos sempre o acompanhamento presencial com um nutricionista registrado.' },
+              { q: 'Quanto tempo leva para gerar o plano?', a: 'A geracao do plano leva entre 30 segundos e 1 minuto. O questionario em si leva cerca de 8-10 minutos para ser preenchido.' },
+              { q: 'Posso gerar mais de um plano?', a: 'Sim! Voce pode preencher o questionario quantas vezes quiser e ter um historico de todos os seus planos na area logada.' },
+              { q: 'O plano considera minhas restricoes alimentares?', a: 'Sim. O questionario coleta informacoes detalhadas sobre alergias, intolerancias, preferencias e restricoes. O plano respeita todas elas.' },
+              { q: 'Preciso pagar para usar?', a: 'O MealTrack esta em fase beta. Crie sua conta e experimente gratuitamente.' },
+            ].map((item, i) => (
+              <AccordionItem key={i} value={`faq-${i}`} className="border rounded-xl px-4" data-testid={`landing-faq-${i}`}>
+                <AccordionTrigger className="text-left text-sm font-medium py-4">{item.q}</AccordionTrigger>
+                <AccordionContent className="text-sm text-muted-foreground pb-4">{item.a}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-16 sm:py-20 bg-card">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-2xl sm:text-3xl font-semibold mb-4" style={{ fontFamily: "'Fraunces', serif" }}>Pronto para comecar?</h2>
+          <p className="text-muted-foreground mb-8">Crie sua conta gratuitamente e receba seu plano nutricional personalizado hoje.</p>
+          <Button size="lg" className="h-13 px-8 text-base" onClick={() => navigate('/signup')}>
+            Criar minha conta <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Leaf className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium" style={{ fontFamily: "'Fraunces', serif" }}>MealTrack</span>
+          </div>
+          <p className="text-xs text-muted-foreground">MealTrack - Plano nutricional inteligente. Nao substitui acompanhamento profissional.</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
