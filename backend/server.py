@@ -401,7 +401,7 @@ async def generate_plan(assessment_id: str, request: Request):
             })
         
         message = anthropicClient.messages.create(
-            model="claude-sonnet-4-5-20250929",
+            model="claude-opus-4-6",
             max_tokens=16000,
             temperature=0.4,
             system=system_prompt,
