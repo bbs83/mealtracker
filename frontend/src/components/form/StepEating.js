@@ -168,7 +168,7 @@ export default function StepEating({ data, update }) {
             <SelectValue placeholder="Selecione" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="tight">Economico</SelectItem>
+            <SelectItem value="tight">Econômico</SelectItem>
             <SelectItem value="moderate">Moderado</SelectItem>
             <SelectItem value="flexible">Flexivel</SelectItem>
           </SelectContent>
