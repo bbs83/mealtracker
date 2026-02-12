@@ -2,74 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-    margin: 0;
-    font-family:
-        -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-        "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-        sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-    font-family:
-        source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
-}
-
 @layer base {
     :root {
-        --background: 0 0% 100%;
-        --foreground: 0 0% 3.9%;
+        --background: 45 33% 97%;
+        --foreground: 120 16% 14%;
         --card: 0 0% 100%;
-        --card-foreground: 0 0% 3.9%;
+        --card-foreground: 120 16% 14%;
         --popover: 0 0% 100%;
-        --popover-foreground: 0 0% 3.9%;
-        --primary: 0 0% 9%;
-        --primary-foreground: 0 0% 98%;
-        --secondary: 0 0% 96.1%;
-        --secondary-foreground: 0 0% 9%;
-        --muted: 0 0% 96.1%;
-        --muted-foreground: 0 0% 45.1%;
-        --accent: 0 0% 96.1%;
-        --accent-foreground: 0 0% 9%;
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 89.8%;
-        --input: 0 0% 89.8%;
-        --ring: 0 0% 3.9%;
-        --chart-1: 12 76% 61%;
-        --chart-2: 173 58% 39%;
-        --chart-3: 197 37% 24%;
-        --chart-4: 43 74% 66%;
-        --chart-5: 27 87% 67%;
-        --radius: 0.5rem;
-    }
-    .dark {
-        --background: 0 0% 3.9%;
-        --foreground: 0 0% 98%;
-        --card: 0 0% 3.9%;
-        --card-foreground: 0 0% 98%;
-        --popover: 0 0% 3.9%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 0 0% 9%;
-        --secondary: 0 0% 14.9%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 0 0% 14.9%;
-        --muted-foreground: 0 0% 63.9%;
-        --accent: 0 0% 14.9%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 14.9%;
-        --input: 0 0% 14.9%;
-        --ring: 0 0% 83.1%;
-        --chart-1: 220 70% 50%;
-        --chart-2: 160 60% 45%;
-        --chart-3: 30 80% 55%;
-        --chart-4: 280 65% 60%;
-        --chart-5: 340 75% 55%;
+        --popover-foreground: 120 16% 14%;
+        --primary: 97 20% 36%;
+        --primary-foreground: 45 33% 97%;
+        --secondary: 36 25% 90%;
+        --secondary-foreground: 120 16% 14%;
+        --muted: 36 22% 92%;
+        --muted-foreground: 110 9% 36%;
+        --accent: 170 25% 90%;
+        --accent-foreground: 120 16% 14%;
+        --border: 32 18% 86%;
+        --input: 32 18% 86%;
+        --ring: 170 33% 32%;
+        --destructive: 6 69% 43%;
+        --destructive-foreground: 45 33% 97%;
+        --radius: 0.85rem;
+        --chart-1: 97 20% 36%;
+        --chart-2: 170 33% 32%;
+        --chart-3: 18 45% 58%;
+        --chart-4: 40 55% 55%;
+        --chart-5: 110 16% 45%;
     }
 }
 
@@ -79,6 +38,12 @@ code {
     }
     body {
         @apply bg-background text-foreground;
+        font-family: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Fraunces', ui-serif, Georgia, serif;
     }
 }
 
@@ -86,7 +51,6 @@ code {
     [data-debug-wrapper="true"] {
         display: contents !important;
     }
-
     [data-debug-wrapper="true"] > * {
         margin-left: inherit;
         margin-right: inherit;
@@ -113,3 +77,22 @@ code {
         border-bottom-color: inherit;
     }
 }
+
+/* Markdown plan viewer styles */
+.plan-content h1 { @apply text-2xl sm:text-3xl font-semibold mt-8 mb-4; font-family: 'Fraunces', serif; }
+.plan-content h2 { @apply text-xl sm:text-2xl font-semibold mt-8 mb-3; font-family: 'Fraunces', serif; }
+.plan-content h3 { @apply text-lg sm:text-xl font-semibold mt-6 mb-2; font-family: 'Fraunces', serif; }
+.plan-content h4 { @apply text-base font-semibold mt-4 mb-2; }
+.plan-content p { @apply mb-3 leading-7; }
+.plan-content ul { @apply mb-4 pl-6 list-disc space-y-1; }
+.plan-content ol { @apply mb-4 pl-6 list-decimal space-y-1; }
+.plan-content li { @apply leading-7; }
+.plan-content strong { @apply font-semibold; }
+.plan-content em { @apply italic; }
+.plan-content hr { @apply my-6 border-border; }
+.plan-content blockquote { @apply border-l-4 border-primary/30 pl-4 my-4 italic text-muted-foreground; }
+.plan-content table { @apply w-full border-collapse my-6 text-sm; }
+.plan-content thead { @apply bg-secondary; }
+.plan-content th { @apply border border-border px-3 py-2 text-left font-semibold text-sm; }
+.plan-content td { @apply border border-border px-3 py-2 text-sm; }
+.plan-content tbody tr:nth-child(even) { @apply bg-muted/30; }
