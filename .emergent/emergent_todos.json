@@ -1,22 +1,22 @@
 [
   {
     "content": "1. Upgrade model to opus 4.6, 8-min message, non-looping progress, better formatting, deeper nutritional analysis",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "2. Fix ALL accent marks throughout the entire app (PT-BR proper)",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "3. Clarify liquid intake field (additional to meals)",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "4. Export plan as PDF instead of .md",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "5. Test all changes end to end",
-    "status": "pending"
+    "status": "completed"
   }
 ]
