@@ -111,14 +111,14 @@ export default function StepEating({ data, update }) {
   return (
     <div className="space-y-6">
       <div className="mb-5">
-        <h2 className="text-xl font-semibold mb-1" style={{ fontFamily: "'Fraunces', serif" }}>Alimentacao</h2>
-        <p className="text-sm text-muted-foreground">Seus habitos alimentares atuais e preferencias</p>
+        <h2 className="text-xl font-semibold mb-1" style={{ fontFamily: "'Fraunces', serif" }}>Alimentação</h2>
+        <p className="text-sm text-muted-foreground">Seus hábitos alimentares atuais e preferências</p>
       </div>
 
       {/* Meal availability toggles */}
       <div>
-        <label className="text-sm font-medium mb-3 block">Quais refeicoes voce consegue fazer no dia a dia?</label>
-        <p className="text-xs text-muted-foreground mb-3">Ative as refeicoes que sao viaveis para sua rotina. Desative as que nao consegue fazer.</p>
+        <label className="text-sm font-medium mb-3 block">Quais refeições você consegue fazer no dia a dia?</label>
+        <p className="text-xs text-muted-foreground mb-3">Ative as refeições que são viáveis para sua rotina. Desative as que não consegue fazer.</p>
         <div className="space-y-2">
           {MEAL_DEFS.map(meal => (
             <div key={meal.key} className="flex items-center justify-between p-3 rounded-xl border border-border bg-card">
