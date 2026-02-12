@@ -4,12 +4,26 @@ import { Button } from '@/components/ui/button';
 import { REVIEW_SECTIONS, FIELD_LABELS } from '@/data/formConstants';
 import { Pencil } from 'lucide-react';
 
+const VALUE_MAP = {
+  male: 'Masculino', female: 'Feminino',
+  lose_weight: 'Emagrecer', gain_muscle: 'Ganhar massa', maintain: 'Manter peso',
+  performance: 'Performance', health: 'Saude geral', clinical: 'Controle clinico',
+  sedentary: 'Sedentario', light: 'Levemente ativo', moderate: 'Moderado',
+  very_active: 'Muito ativo', athlete: 'Atleta',
+  low: 'Baixo', high: 'Alto', very_high: 'Muito alto',
+  home_mostly: 'Em casa', restaurant: 'Restaurante', mixed: 'Misto', delivery: 'Delivery',
+  daily: 'Todo dia', alternate: 'Dia sim dia nao', infrequent: 'Menos de 3x/semana', frequent: 'Mais de 3x/dia',
+  normal: 'Normal', hard: 'Ressecada', loose: 'Amolecida', variable: 'Variavel',
+  tight: 'Economico', flexible: 'Flexivel',
+  regular: 'Regular', irregular: 'Irregular', absent: 'Ausente', menopause: 'Menopausa', perimenopause: 'Perimenopausa',
+};
+
 const formatValue = (value) => {
   if (value === true) return 'Sim';
   if (value === false) return 'Nao';
   if (Array.isArray(value)) return value.length > 0 ? value.join(', ') : null;
   if (value === '' || value === null || value === undefined) return null;
-  return String(value);
+  return VALUE_MAP[value] || String(value);
 };
 
 export default function StepReview({ data, goToStep }) {
