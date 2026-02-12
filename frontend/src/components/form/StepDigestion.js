@@ -54,29 +54,29 @@ export default function StepDigestion({ data, update }) {
   return (
     <div className="space-y-6">
       <div className="mb-5">
-        <h2 className="text-xl font-semibold mb-1" style={{ fontFamily: "'Fraunces', serif" }}>Digestao</h2>
-        <p className="text-sm text-muted-foreground">Saude intestinal e hidratacao</p>
+        <h2 className="text-xl font-semibold mb-1" style={{ fontFamily: "'Fraunces', serif" }}>Digestão</h2>
+        <p className="text-sm text-muted-foreground">Saúde intestinal e hidratação</p>
       </div>
 
       <div>
-        <label className="text-sm font-medium mb-3 block">Frequencia intestinal <span className="text-destructive">*</span></label>
-        <p className="text-xs text-muted-foreground mb-2">Com que frequencia voce vai ao banheiro?</p>
+        <label className="text-sm font-medium mb-3 block">Frequência intestinal <span className="text-destructive">*</span></label>
+        <p className="text-xs text-muted-foreground mb-2">Com que frequência você vai ao banheiro?</p>
         <RadioCards options={BOWEL_FREQUENCY} value={data.bowel_frequency} onChange={v => update('bowel_frequency', v)} testIdPrefix="form-bowel-freq" />
       </div>
 
       <div>
-        <label className="text-sm font-medium mb-3 block">Consistencia das fezes <span className="text-destructive">*</span></label>
+        <label className="text-sm font-medium mb-3 block">Consistência das fezes <span className="text-destructive">*</span></label>
         <RadioCards options={BOWEL_CONSISTENCY} value={data.bowel_consistency} onChange={v => update('bowel_consistency', v)} testIdPrefix="form-bowel-cons" />
       </div>
 
       <div>
         <label className="text-sm font-medium mb-3 block">Sintomas digestivos frequentes</label>
-        <p className="text-xs text-muted-foreground mb-2">Selecione os que ocorrem com frequencia.</p>
+        <p className="text-xs text-muted-foreground mb-2">Selecione os que ocorrem com frequência.</p>
         <CheckboxGroup options={GI_SYMPTOMS} selected={data.gi_symptoms || []} onChange={v => update('gi_symptoms', v)} testIdPrefix="form-gi" />
       </div>
 
       <div>
-        <label className="text-sm font-medium mb-1.5 block">Consumo de agua por dia</label>
+        <label className="text-sm font-medium mb-1.5 block">Consumo de água por dia</label>
         <div className="relative max-w-xs">
           <Input type="number" placeholder="Ex: 1.5" step="0.5" value={data.water_intake || ''} onChange={e => update('water_intake', parseFloat(e.target.value) || '')} data-testid="form-water-intake-input" />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">litros</span>
@@ -84,9 +84,9 @@ export default function StepDigestion({ data, update }) {
       </div>
 
       <div>
-        <label className="text-sm font-medium mb-1.5 block">Outros liquidos</label>
-        <p className="text-xs text-muted-foreground mb-1.5">Cafe, cha, sucos, refrigerante — o que voce bebe alem de agua?</p>
-        <Textarea placeholder="Ex: 3 cafes por dia, 1 suco no almoco" value={data.other_drinks || ''} onChange={e => update('other_drinks', e.target.value)} rows={2} data-testid="form-other-drinks-input" />
+        <label className="text-sm font-medium mb-1.5 block">Outros líquidos consumidos <strong>além</strong> das refeições</label>
+        <p className="text-xs text-muted-foreground mb-1.5">Informe aqui os líquidos que você consome <strong>fora das refeições</strong> já descritas na página anterior (ex: cafés extras, chás, sucos, refrigerantes ao longo do dia).</p>
+        <Textarea placeholder="Ex: 3 cafés ao longo do dia, 1 chá à noite, 1 refrigerante no final de semana" value={data.other_drinks || ''} onChange={e => update('other_drinks', e.target.value)} rows={2} data-testid="form-other-drinks-input" />
       </div>
     </div>
   );
