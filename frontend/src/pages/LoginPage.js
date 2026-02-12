@@ -37,16 +37,13 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background">
       <AppHeader />
       <div className="flex min-h-[calc(100vh-64px)]">
-        {/* Left side - benefits */}
         <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12" style={{ background: 'radial-gradient(800px 400px at 30% 30%, rgba(201,123,99,0.12), transparent 55%), radial-gradient(600px 400px at 70% 70%, rgba(127,154,114,0.12), transparent 55%)' }}>
           <div className="max-w-md">
             <Leaf className="w-12 h-12 text-primary mb-6" />
             <h2 className="text-3xl font-semibold mb-4" style={{ fontFamily: "'Fraunces', serif" }}>Seu plano nutricional personalizado</h2>
-            <p className="text-muted-foreground leading-7">Preencha o questionario completo e receba um plano alimentar de 7 dias, criado por inteligencia artificial com base nas suas necessidades unicas.</p>
+            <p className="text-muted-foreground leading-7">Preencha o questionário completo e receba um plano alimentar de 7 dias, criado por inteligência artificial com base nas suas necessidades únicas.</p>
           </div>
         </div>
-        
-        {/* Right side - form */}
         <div className="flex-1 flex items-center justify-center p-6">
           <Card className="w-full max-w-md shadow-lg">
             <CardHeader className="text-center">
@@ -68,7 +65,7 @@ export default function LoginPage() {
                 </Button>
               </form>
               <p className="mt-4 text-center text-sm text-muted-foreground">
-                Nao tem conta? <Link to="/signup" className="text-primary font-medium hover:underline" data-testid="login-signup-link">Criar conta</Link>
+                Não tem conta? <Link to="/signup" className="text-primary font-medium hover:underline" data-testid="login-signup-link">Criar conta</Link>
               </p>
             </CardContent>
           </Card>
