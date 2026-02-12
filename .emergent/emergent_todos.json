@@ -1,42 +1,22 @@
 [
   {
-    "content": "Implement meal availability toggles (breakfast, morning snack, lunch, afternoon snack, dinner, supper)",
-    "status": "completed"
+    "content": "1. Upgrade model to opus 4.6, 8-min message, non-looping progress, better formatting, deeper nutritional analysis",
+    "status": "in_progress"
   },
   {
-    "content": "Implement Weekly Food Recall component (7 days x enabled meals + extras per day)",
-    "status": "completed"
+    "content": "2. Fix ALL accent marks throughout the entire app (PT-BR proper)",
+    "status": "pending"
   },
   {
-    "content": "Add exercise timing fields (exercise_time, exercise_meal_timing)",
-    "status": "completed"
+    "content": "3. Clarify liquid intake field (additional to meals)",
+    "status": "pending"
   },
   {
-    "content": "Add sleep hours auto-calculation with info card display",
-    "status": "completed"
+    "content": "4. Export plan as PDF instead of .md",
+    "status": "pending"
   },
   {
-    "content": "Implement lab file upload (image/PDF) with base64 encoding",
-    "status": "completed"
-  },
-  {
-    "content": "Improve generation loading screen with elapsed timer and phase messages",
-    "status": "completed"
-  },
-  {
-    "content": "Add download plan as .md file button",
-    "status": "completed"
-  },
-  {
-    "content": "Update prompt/backend to support multimodal lab file submission",
-    "status": "completed"
-  },
-  {
-    "content": "Add data cleaning before submission (remove empty fields, calculate sleep)",
-    "status": "completed"
-  },
-  {
-    "content": "End to end testing of all improvements",
-    "status": "completed"
+    "content": "5. Test all changes end to end",
+    "status": "pending"
   }
 ]
