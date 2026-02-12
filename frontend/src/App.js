@@ -1,53 +1,46 @@
-import { useEffect } from "react";
-import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import React from 'react';
+import '@/App.css';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { Toaster } from '@/components/ui/sonner';
+import LandingPage from '@/pages/LandingPage';
+import LoginPage from '@/pages/LoginPage';
+import SignupPage from '@/pages/SignupPage';
+import DashboardPage from '@/pages/DashboardPage';
+import NewAssessmentPage from '@/pages/NewAssessmentPage';
+import PlanViewerPage from '@/pages/PlanViewerPage';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
-  return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+  return user ? children : <Navigate to="/login" replace />;
 };
 
 function App() {
   return (
-    <div className="App">
+    <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/app" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path="/app/new" element={<ProtectedRoute><NewAssessmentPage /></ProtectedRoute>} />
+          <Route path="/app/plans/:planId" element={<ProtectedRoute><PlanViewerPage /></ProtectedRoute>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
-    </div>
+      <Toaster position="top-center" richColors />
+    </AuthProvider>
   );
 }
 
