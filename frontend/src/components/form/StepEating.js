@@ -143,8 +143,8 @@ export default function StepEating({ data, update }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="text-sm font-medium mb-1.5 block">Alimentos que voce adora</label>
-          <p className="text-xs text-muted-foreground mb-1.5">O que nao pode faltar?</p>
+          <label className="text-sm font-medium mb-1.5 block">Alimentos que você adora</label>
+          <p className="text-xs text-muted-foreground mb-1.5">O que não pode faltar?</p>
           <Textarea placeholder="Ex: Frutas, arroz, frango, chocolate" value={data.food_loves || ''} onChange={e => update('food_loves', e.target.value)} rows={3} data-testid="form-food-loves-input" />
         </div>
         <div>
