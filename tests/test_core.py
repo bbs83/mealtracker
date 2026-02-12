@@ -1,19 +1,16 @@
 """
-POC Test: Claude Nutrition Plan Generation
-Tests that the Emergent LLM Key + Claude can generate a complete nutrition plan
-from patient JSON data using the provided prompt template.
+POC Test: Claude Nutrition Plan Generation (Direct Anthropic SDK)
+Tests that Claude can generate a complete nutrition plan from patient JSON data.
 """
-import asyncio
 import os
 import json
 import time
 import sys
 
-sys.path.insert(0, '/app/backend')
 from dotenv import load_dotenv
 load_dotenv('/app/backend/.env')
 
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+import anthropic
 
 # Sample patient JSON covering many fields including women's health
 SAMPLE_PATIENT = {
@@ -65,7 +62,6 @@ SAMPLE_PATIENT = {
     "hormonal_symptoms": "TPM com compulsão por doces e retenção de líquido na semana anterior à menstruação."
 }
 
-# Prompt template (from the artifact)
 PROMPT_TEMPLATE = """Você é uma nutricionista clínica com 15 anos de experiência, especializada em nutrição funcional e esportiva, com registro ativo no CRN (Conselho Regional de Nutricionistas) do Brasil. Você elabora planos alimentares individualizados, baseados em evidências científicas, adaptados à realidade e preferências de cada paciente.
 
 <dados_paciente>
@@ -102,7 +98,7 @@ Antes de montar o plano, faça os cálculos e análises necessários. Apresente-
 Defina a distribuição de macros (proteínas, carboidratos, gorduras) em gramas e percentual, justificando a escolha com base no objetivo, nível de atividade e condições clínicas do paciente.
 
 Diretrizes gerais (ajuste conforme contexto clínico):
-- **Proteína**: 1,2-2,0g/kg de peso corporal (priorize o limite superior para ganho de massa ou emagrecimento com preservação muscular)
+- **Proteína**: 1,2-2,0g/kg de peso corporal
 - **Gordura**: 0,8-1,2g/kg (nunca abaixo de 0,5g/kg)
 - **Carboidrato**: restante das calorias após proteína e gordura
 
@@ -116,7 +112,7 @@ Diretrizes gerais (ajuste conforme contexto clínico):
 - Com base no recordatório alimentar, identifique:
   - Pontos positivos a manter
   - Principais gaps nutricionais
-  - Padrões problemáticos (pular refeições, excesso de ultraprocessados, baixa ingestão de fibras/proteínas, etc.)
+  - Padrões problemáticos
 - Considere o orçamento, quem prepara as refeições e a rotina de horários ao planejar.
 
 ---
@@ -127,8 +123,8 @@ Monte um cardápio detalhado para **7 dias (segunda a domingo)**, com as seguint
 
 ### Estrutura de cada dia:
 Para cada refeição, informe:
-- **Horário sugerido** (baseado nos horários de acordar/dormir do paciente)
-- **Alimentos e quantidades** em medidas caseiras (xícara, colher de sopa, unidade, fatia, etc.) E em gramas/ml entre parênteses
+- **Horário sugerido**
+- **Alimentos e quantidades** em medidas caseiras E em gramas/ml entre parênteses
 - **Calorias e macros da refeição** (kcal | P: Xg | C: Xg | G: Xg)
 
 ### Refeições do dia:
@@ -141,30 +137,23 @@ Adapte o número de refeições ao que o paciente informou. Estrutura típica:
 6. Ceia (se aplicável)
 
 ### Regras do cardápio:
-- **Respeite todas as alergias e intolerâncias** — nunca inclua alimentos que o paciente é alérgico ou intolerante.
-- **Exclua alimentos que o paciente disse detestar** — não force nenhum alimento rejeitado.
-- **Priorize alimentos que o paciente disse gostar** — inclua-os frequentemente.
-- **Respeite restrições alimentares** (vegetariano, vegano, sem glúten, etc.).
-- **Varie os alimentos ao longo da semana** — evite repetir o mesmo prato em dias consecutivos.
-- **Use alimentos acessíveis e comuns no Brasil** — priorize ingredientes encontrados em qualquer supermercado.
-- **Adapte ao orçamento informado** — se econômico, priorize proteínas mais baratas (ovos, frango, sardinha, leguminosas), frutas da estação, etc.
-- **Considere praticidade** — se o paciente come fora frequentemente, inclua orientações para restaurantes por quilo e delivery.
-- **Inclua pelo menos 25g de fibra por dia**.
-- **Distribua a ingestão proteica ao longo do dia** (mínimo 20g por refeição principal).
-- Ao final de cada dia, apresente o **total diário** (kcal | P | C | G | Fibra).
+- **Respeite todas as alergias e intolerâncias**
+- **Exclua alimentos que o paciente disse detestar**
+- **Priorize alimentos que o paciente disse gostar**
+- **Respeite restrições alimentares**
+- **Varie os alimentos ao longo da semana**
+- **Use alimentos acessíveis e comuns no Brasil**
+- **Adapte ao orçamento informado**
+- **Considere praticidade**
+- **Inclua pelo menos 25g de fibra por dia**
+- **Distribua a ingestão proteica ao longo do dia** (mínimo 20g por refeição principal)
+- Ao final de cada dia, apresente o **total diário** (kcal | P | C | G | Fibra)
 
 ---
 
 ## ETAPA 3 — Tabela de Substituições
 
-Crie uma tabela de equivalências para dar flexibilidade ao paciente, organizada por grupo alimentar:
-
-| Grupo | Alimento Base | Substitutos Equivalentes (mesma porção calórica) |
-|-------|--------------|--------------------------------------------------|
-| Carboidratos | Arroz branco (4 col. sopa) | Arroz integral, batata doce, mandioca, macarrão integral... |
-| Proteínas | Frango grelhado (120g) | Peixe, carne bovina magra, ovos, tofu... |
-| ... | ... | ... |
-
+Crie uma tabela de equivalências para dar flexibilidade ao paciente, organizada por grupo alimentar.
 Inclua pelo menos 3-4 substitutos por alimento base, respeitando as restrições do paciente.
 
 ---
@@ -172,57 +161,52 @@ Inclua pelo menos 3-4 substitutos por alimento base, respeitando as restrições
 ## ETAPA 4 — Orientações Gerais
 
 Apresente orientações práticas e personalizadas:
-
-1. **Hidratação**: Meta diária de água com base no peso (mínimo 35ml/kg) e ajustes para atividade física. Compare com o consumo atual informado.
-2. **Orientações para sintomas digestivos**: Se o paciente reportou sintomas GI, inclua orientações específicas (ex: alimentos que ajudam na constipação, como reduzir gases, etc.).
-3. **Orientações para condições clínicas**: Dicas alimentares específicas para cada condição diagnosticada.
-4. **Dicas de preparo e organização**: Sugestões de meal prep, organização semanal, como montar marmitas.
-5. **Orientações para comer fora**: Se aplicável, como fazer boas escolhas em restaurantes.
+1. **Hidratação**
+2. **Orientações para sintomas digestivos**
+3. **Orientações para condições clínicas**
+4. **Dicas de preparo e organização**
+5. **Orientações para comer fora**
 
 ---
 
 ## ETAPA 5 — Resumo Executivo
 
 Ao final, apresente um resumo conciso com:
-
 - Meta calórica diária e distribuição de macros
-- 3 principais mudanças recomendadas em relação à alimentação atual
-- Alertas importantes (clínicos, interações, deficiências a monitorar)
-- Sugestão de reavaliação (quando o paciente deve retornar / ajustar o plano)
+- 3 principais mudanças recomendadas
+- Alertas importantes
+- Sugestão de reavaliação
 
 ---
 
 ## Regras de formatação do output:
-
-- Use linguagem acessível e acolhedora — o paciente vai ler diretamente.
-- Trate o paciente pelo nome informado.
-- Evite jargão técnico sem explicação. Quando usar termos técnicos, explique entre parênteses.
-- Use tabelas para o cardápio e substituições.
-- Use emojis com moderação (apenas em títulos de seção) para tornar o documento mais visual.
-- Estruture com títulos e subtítulos claros (markdown).
-- O documento deve ter entre 3.000-5.000 palavras.
+- Use linguagem acessível e acolhedora
+- Trate o paciente pelo nome informado
+- Evite jargão técnico sem explicação
+- Use tabelas para o cardápio e substituições
+- Use emojis com moderação (apenas em títulos de seção)
+- Estruture com títulos e subtítulos claros (markdown)
+- O documento deve ter entre 3.000-5.000 palavras
 
 ## Regras de segurança:
-
-- Este plano é uma ferramenta de apoio e NÃO substitui o acompanhamento profissional presencial.
-- Inclua um disclaimer claro no início do documento informando isso.
-- Se os dados indicarem condições clínicas graves (diabetes tipo 1, gestação de risco, transtornos alimentares, IMC < 18.5), reforce a necessidade de acompanhamento médico e nutricional presencial antes de seguir qualquer plano.
-- Nunca recomende suplementação específica — limite-se a sugerir que o paciente converse com seu nutricionista ou médico sobre possível necessidade de suplementação com base nos exames.
-- Não prescreva dietas abaixo de 1200 kcal (mulheres) ou 1500 kcal (homens)."""
+- Este plano é uma ferramenta de apoio e NÃO substitui o acompanhamento profissional presencial
+- Inclua um disclaimer claro no início do documento
+- Nunca recomende suplementação específica
+- Não prescreva dietas abaixo de 1200 kcal (mulheres) ou 1500 kcal (homens)"""
 
 
-async def test_claude_nutrition_plan():
+def test_claude_nutrition_plan():
     """Test Claude nutrition plan generation with sample patient data."""
     print("=" * 60)
-    print("TEST: Claude Nutrition Plan Generation")
+    print("TEST: Claude Nutrition Plan Generation (Direct Anthropic)")
     print("=" * 60)
     
-    api_key = os.environ.get('EMERGENT_LLM_KEY')
+    api_key = os.environ.get('ANTHROPIC_API_KEY')
     if not api_key:
-        print("FAIL: EMERGENT_LLM_KEY not found in environment")
+        print("FAIL: ANTHROPIC_API_KEY not found in environment")
         return False
     
-    print(f"API Key found: {api_key[:12]}...")
+    print(f"API Key found: {api_key[:20]}...")
     
     # Build the system prompt with patient data
     system_prompt = PROMPT_TEMPLATE.replace('{PATIENT_JSON}', json.dumps(SAMPLE_PATIENT, ensure_ascii=False, indent=2))
@@ -230,43 +214,51 @@ async def test_claude_nutrition_plan():
     print(f"\nSystem prompt length: {len(system_prompt)} chars")
     print(f"Patient JSON fields: {len(SAMPLE_PATIENT)} fields")
     
-    # Initialize Claude chat
-    chat = LlmChat(
-        api_key=api_key,
-        session_id="poc-nutrition-test-001",
-        system_message=system_prompt
-    )
-    chat.with_model("anthropic", "claude-sonnet-4-5-20250929")
+    # Initialize Anthropic client
+    client = anthropic.Anthropic(api_key=api_key)
     
-    # Send the generation request
-    user_message = UserMessage(
-        text="Gere meu plano nutricional completo com base nos dados informados."
-    )
-    
-    print("\nSending request to Claude...")
+    print("\nSending request to Claude Sonnet 4.5...")
     start_time = time.time()
     
     try:
-        response = await chat.send_message(user_message)
+        message = client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=16000,
+            temperature=0.4,
+            system=system_prompt,
+            messages=[
+                {
+                    "role": "user",
+                    "content": "Gere meu plano nutricional completo com base nos dados informados."
+                }
+            ]
+        )
+        
+        response = message.content[0].text
         elapsed = time.time() - start_time
+        
         print(f"Response received in {elapsed:.1f}s")
         print(f"Response length: {len(response)} chars")
         print(f"Approximate word count: {len(response.split())} words")
+        print(f"Input tokens: {message.usage.input_tokens}")
+        print(f"Output tokens: {message.usage.output_tokens}")
+        print(f"Stop reason: {message.stop_reason}")
         
         # Validation checks
         checks = {
-            "ETAPA 1": "ETAPA 1" in response or "Avaliação Inicial" in response or "avaliação inicial" in response.lower(),
-            "ETAPA 2": "ETAPA 2" in response or "Plano Alimentar" in response or "plano alimentar" in response.lower(),
-            "ETAPA 3": "ETAPA 3" in response or "Substituiç" in response or "substituiç" in response.lower(),
-            "ETAPA 4": "ETAPA 4" in response or "Orientaç" in response or "orientaç" in response.lower(),
-            "ETAPA 5": "ETAPA 5" in response or "Resumo" in response or "resumo" in response.lower(),
-            "Disclaimer": "disclaimer" in response.lower() or "substitui" in response.lower() or "acompanhamento" in response.lower(),
-            "Patient name used": "Maria" in response,
-            "Has markdown headings": "##" in response or "**" in response,
+            "ETAPA 1 present": "ETAPA 1" in response or "Avaliação Inicial" in response,
+            "ETAPA 2 present": "ETAPA 2" in response or "Plano Alimentar" in response,
+            "ETAPA 3 present": "ETAPA 3" in response or "Substituiç" in response,
+            "ETAPA 4 present": "ETAPA 4" in response or "Orientaç" in response,
+            "ETAPA 5 present": "ETAPA 5" in response or "Resumo" in response,
+            "Disclaimer present": "disclaimer" in response.lower() or "substitui" in response.lower() or "acompanhamento" in response.lower(),
+            "Patient name 'Maria' used": "Maria" in response,
+            "Has markdown headings": "##" in response,
             "Minimum length (2000+ chars)": len(response) > 2000,
             "Has calorie info": "kcal" in response.lower() or "calor" in response.lower(),
-            "Has macros": "proteín" in response.lower() or "protein" in response.lower(),
-            "Respects lactose restriction": "sem lactose" in response.lower() or "intolerância" in response.lower() or "lactose" in response.lower(),
+            "Has macros info": "proteín" in response.lower() or "protein" in response.lower(),
+            "Mentions lactose restriction": "lactose" in response.lower(),
+            "Not truncated (stop_reason=end_turn)": message.stop_reason == "end_turn",
         }
         
         print("\n" + "=" * 60)
@@ -275,37 +267,44 @@ async def test_claude_nutrition_plan():
         
         all_passed = True
         for check_name, result in checks.items():
-            status = "✅ PASS" if result else "❌ FAIL"
+            status = "PASS" if result else "FAIL"
             print(f"  {status}: {check_name}")
             if not result:
                 all_passed = False
         
-        # Print first 500 chars of the response for inspection
+        # Print first 500 chars
         print("\n" + "=" * 60)
         print("RESPONSE PREVIEW (first 500 chars):")
         print("=" * 60)
         print(response[:500])
         print("...")
         
-        # Print last 500 chars
+        # Print last 300 chars
         print("\n" + "=" * 60)
-        print("RESPONSE END (last 500 chars):")
+        print("RESPONSE END (last 300 chars):")
         print("=" * 60)
-        print(response[-500:])
+        print(response[-300:])
         
         if all_passed:
             print("\n✅ ALL CHECKS PASSED - Core POC successful!")
         else:
             print("\n⚠️ SOME CHECKS FAILED - Review output above")
         
+        # Save response for inspection
+        with open('/app/tests/poc_response.md', 'w') as f:
+            f.write(response)
+        print("\nFull response saved to /app/tests/poc_response.md")
+        
         return all_passed
         
     except Exception as e:
         elapsed = time.time() - start_time
         print(f"\n❌ ERROR after {elapsed:.1f}s: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
 if __name__ == "__main__":
-    result = asyncio.run(test_claude_nutrition_plan())
+    result = test_claude_nutrition_plan()
     sys.exit(0 if result else 1)
