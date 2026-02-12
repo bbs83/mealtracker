@@ -235,6 +235,109 @@ class MealTrackAPITester:
         
         return success
 
+    def test_get_active_plan(self):
+        """Test getting active plan"""
+        if not self.token:
+            self.log("⚠️  Skipping active plan test - no auth token")
+            return False
+            
+        success, response = self.run_test("Get Active Plan", "GET", "active-plan", 200)
+        
+        if success:
+            plan = response.get('plan')
+            targets = response.get('targets')
+            self.log(f"   Active plan: {'Found' if plan else 'None'}")
+            self.log(f"   Targets: {'Found' if targets else 'None'}")
+            if plan:
+                self.plan_id = plan.get('id')
+        
+        return success
+
+    def test_create_meal_log(self):
+        """Test creating a meal log with text description"""
+        if not self.token:
+            self.log("⚠️  Skipping meal log test - no auth token")
+            return False
+            
+        today = datetime.now().strftime("%Y-%m-%d")
+        meal_data = {
+            "date": today,
+            "meal_type": "meal_lunch",
+            "description": "arroz, feijão, frango grelhado, salada"
+        }
+        
+        success, response = self.run_test(
+            "Create Meal Log", 
+            "POST", 
+            "meal-logs", 
+            200, 
+            meal_data,
+            timeout=60  # AI analysis can take time
+        )
+        
+        if success:
+            status = response.get('status', 'unknown')
+            analysis = response.get('ai_analysis', {})
+            foods = analysis.get('foods', [])
+            totals = analysis.get('totals', {})
+            self.log(f"   Meal analysis: {status}")
+            self.log(f"   Foods identified: {len(foods)}")
+            self.log(f"   Total calories: {totals.get('kcal', 0)}")
+        
+        return success
+
+    def test_get_meal_logs(self):
+        """Test getting meal logs for a specific date"""
+        if not self.token:
+            self.log("⚠️  Skipping get meal logs - no auth token")
+            return False
+            
+        today = datetime.now().strftime("%Y-%m-%d")
+        success, response = self.run_test("Get Meal Logs", "GET", f"meal-logs?date={today}", 200)
+        
+        if success:
+            logs = response if isinstance(response, list) else []
+            self.log(f"   Found {len(logs)} meal log(s) for {today}")
+        
+        return success
+
+    def test_get_meal_calendar(self):
+        """Test getting meal calendar"""
+        if not self.token:
+            self.log("⚠️  Skipping meal calendar - no auth token")
+            return False
+            
+        success, response = self.run_test("Get Meal Calendar", "GET", "meal-logs/calendar", 200)
+        
+        if success:
+            year = response.get('year')
+            month = response.get('month')
+            days = response.get('days', {})
+            targets = response.get('targets')
+            self.log(f"   Calendar for {year}-{month}: {len(days)} days with data")
+            self.log(f"   Targets: {'Found' if targets else 'None'}")
+        
+        return success
+
+    def test_get_weekly_summary(self):
+        """Test getting weekly summary"""
+        if not self.token:
+            self.log("⚠️  Skipping weekly summary - no auth token")
+            return False
+            
+        success, response = self.run_test("Get Weekly Summary", "GET", "meal-logs/weekly-summary", 200)
+        
+        if success:
+            dates = response.get('dates', [])
+            daily = response.get('daily', {})
+            averages = response.get('averages', {})
+            days_tracked = response.get('days_tracked', 0)
+            self.log(f"   Weekly data for {len(dates)} days")
+            self.log(f"   Days with tracking: {days_tracked}")
+            self.log(f"   Average calories: {averages.get('kcal', 0)}")
+        
+        return success
+
     def run_all_tests(self):
         """Run all API tests in sequence"""
         self.log("🚀 Starting MealTrack API Tests")
