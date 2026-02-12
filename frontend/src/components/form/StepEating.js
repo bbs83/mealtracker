@@ -134,7 +134,7 @@ export default function StepEating({ data, update }) {
       </div>
 
       <div>
-        <label className="text-sm font-medium mb-3 block">Onde voce costuma fazer suas refeicoes? <span className="text-destructive">*</span></label>
+        <label className="text-sm font-medium mb-3 block">Onde você costuma fazer suas refeições? <span className="text-destructive">*</span></label>
         <RadioCards options={MEAL_LOCATIONS} value={data.meal_location} onChange={v => update('meal_location', v)} testIdPrefix="form-meal-location" />
       </div>
 
