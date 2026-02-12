@@ -148,9 +148,9 @@ export default function StepEating({ data, update }) {
           <Textarea placeholder="Ex: Frutas, arroz, frango, chocolate" value={data.food_loves || ''} onChange={e => update('food_loves', e.target.value)} rows={3} data-testid="form-food-loves-input" />
         </div>
         <div>
-          <label className="text-sm font-medium mb-1.5 block">Alimentos que voce detesta</label>
-          <p className="text-xs text-muted-foreground mb-1.5">O que nao come de jeito nenhum?</p>
-          <Textarea placeholder="Ex: Berinjela, jilo, figado" value={data.food_hates || ''} onChange={e => update('food_hates', e.target.value)} rows={3} data-testid="form-food-hates-input" />
+          <label className="text-sm font-medium mb-1.5 block">Alimentos que você detesta</label>
+          <p className="text-xs text-muted-foreground mb-1.5">O que não come de jeito nenhum?</p>
+          <Textarea placeholder="Ex: Berinjela, jiló, fígado" value={data.food_hates || ''} onChange={e => update('food_hates', e.target.value)} rows={3} data-testid="form-food-hates-input" />
         </div>
       </div>
 
