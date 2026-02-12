@@ -90,9 +90,9 @@ const WeeklyRecall = ({ data, update }) => {
               </div>
             ))}
             <div className="pl-3">
-              <label className="text-xs font-medium text-muted-foreground block mb-1">Outros (fora das refeicoes)</label>
+              <label className="text-xs font-medium text-muted-foreground block mb-1">Outros (fora das refeições)</label>
               <Textarea
-                placeholder="Beliscou algo? Comeu fora do horario? Descreva aqui."
+                placeholder="Beliscou algo? Comeu fora do horário? Descreva aqui."
                 value={data[`recall_${day.key}_extras`] || ''}
                 onChange={e => update(`recall_${day.key}_extras`, e.target.value)}
                 rows={2}
