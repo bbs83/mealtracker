@@ -170,7 +170,7 @@ export default function StepEating({ data, update }) {
           <SelectContent>
             <SelectItem value="tight">Econômico</SelectItem>
             <SelectItem value="moderate">Moderado</SelectItem>
-            <SelectItem value="flexible">Flexivel</SelectItem>
+            <SelectItem value="flexible">Flexível</SelectItem>
           </SelectContent>
         </Select>
       </div>
