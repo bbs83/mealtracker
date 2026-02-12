@@ -42,6 +42,7 @@ export default function StepLifestyle({ data, update }) {
   const sleepDuration = calcSleepHours(data.wake_time, data.sleep_time);
 
   // Auto-update the calculated field
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
     if (sleepDuration && data.sleep_hours_calculated !== sleepDuration) {
       update('sleep_hours_calculated', sleepDuration);
