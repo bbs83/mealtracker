@@ -458,10 +458,393 @@ async def get_plan(plan_id: str, request: Request):
         raise HTTPException(status_code=404, detail="Plano não encontrado")
     return serialize_doc(plan)
 
+# ============ TRACKER: MODELS ============
+class MealLogCreate(BaseModel):
+    date: str  # YYYY-MM-DD
+    meal_type: str  # meal_breakfast, meal_lunch, etc.
+    photo_base64: Optional[str] = None
+    photo_media_type: Optional[str] = None
+    description: Optional[str] = None
+
+class MealLogUpdate(BaseModel):
+    foods: Optional[List[Dict[str, Any]]] = None
+
+# ============ TRACKER: PLAN TARGET EXTRACTION ============
+EXTRACT_TARGETS_PROMPT = """Analise o plano nutricional abaixo e extraia as metas diárias de macronutrientes.
+
+Retorne APENAS um JSON válido (sem markdown, sem ```), com esta estrutura exata:
+{
+  "daily_targets": {
+    "kcal": 1600,
+    "protein_g": 120,
+    "carbs_g": 180,
+    "fat_g": 55,
+    "fiber_g": 25
+  },
+  "meals": ["meal_breakfast", "meal_morning_snack", "meal_lunch", "meal_afternoon_snack", "meal_dinner", "meal_supper"]
+}
+
+Extraia os valores da meta calórica e distribuição de macros definidos na ETAPA 1 ou no Resumo Executivo do plano. Os meals devem ser apenas os que aparecem no cardápio.
+
+PLANO:
+"""
+
+@api_router.post("/plans/{plan_id}/parse-targets")
+async def parse_plan_targets(plan_id: str, request: Request):
+    payload = await get_current_user(request)
+    from bson import ObjectId
+    
+    # Check if already parsed
+    existing = await db.plan_targets.find_one({"plan_id": plan_id, "user_id": payload['user_id']})
+    if existing:
+        return serialize_doc(existing)
+    
+    plan = await db.plans.find_one({"_id": ObjectId(plan_id), "user_id": payload['user_id']})
+    if not plan or plan.get('status') != 'ready':
+        raise HTTPException(status_code=404, detail="Plano não encontrado ou não está pronto")
+    
+    try:
+        # Use Sonnet for fast extraction
+        msg = anthropicClient.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=500,
+            temperature=0,
+            messages=[{"role": "user", "content": EXTRACT_TARGETS_PROMPT + plan['plan_markdown'][:8000]}]
+        )
+        raw = msg.content[0].text.strip()
+        # Clean potential markdown code block wrapping
+        if raw.startswith('```'):
+            raw = raw.split('\n', 1)[1] if '\n' in raw else raw[3:]
+            if raw.endswith('```'):
+                raw = raw[:-3]
+        parsed = json.loads(raw)
+        
+        target_doc = {
+            "plan_id": plan_id,
+            "user_id": payload['user_id'],
+            "daily_targets": parsed.get("daily_targets", {"kcal": 1800, "protein_g": 100, "carbs_g": 200, "fat_g": 60, "fiber_g": 25}),
+            "meals": parsed.get("meals", ["meal_breakfast", "meal_lunch", "meal_dinner"]),
+            "extracted_at": datetime.now(timezone.utc)
+        }
+    except Exception as e:
+        logger.error(f"Target extraction failed: {e}")
+        # Fallback defaults
+        target_doc = {
+            "plan_id": plan_id,
+            "user_id": payload['user_id'],
+            "daily_targets": {"kcal": 1800, "protein_g": 100, "carbs_g": 200, "fat_g": 60, "fiber_g": 25},
+            "meals": ["meal_breakfast", "meal_lunch", "meal_dinner"],
+            "extracted_at": datetime.now(timezone.utc)
+        }
+    
+    result = await db.plan_targets.insert_one(target_doc)
+    target_doc['_id'] = result.inserted_id
+    return serialize_doc(target_doc)
+
+# ============ TRACKER: ACTIVE PLAN ============
+@api_router.get("/active-plan")
+async def get_active_plan(request: Request):
+    payload = await get_current_user(request)
+    plan = await db.plans.find_one(
+        {"user_id": payload['user_id'], "status": "ready"},
+        {"plan_markdown": 0},
+        sort=[("created_at", -1)]
+    )
+    if not plan:
+        return {"plan": None, "targets": None}
+    
+    plan_id = str(plan['_id'])
+    targets = await db.plan_targets.find_one({"plan_id": plan_id, "user_id": payload['user_id']})
+    
+    return {
+        "plan": serialize_doc(plan),
+        "targets": serialize_doc(targets) if targets else None
+    }
+
+# ============ TRACKER: MEAL ANALYSIS ============
+MEAL_ANALYSIS_PROMPT = """Você é um nutricionista analisando uma refeição. Analise a imagem/descrição e identifique TODOS os alimentos visíveis, estimando porções e valores nutricionais.
+
+Retorne APENAS um JSON válido (sem markdown, sem ```), com esta estrutura:
+{
+  "foods": [
+    {"name": "Arroz branco", "portion": "4 colheres de sopa", "grams": 160, "kcal": 205, "protein_g": 4, "carbs_g": 45, "fat_g": 0.4, "fiber_g": 1},
+    {"name": "Feijão carioca", "portion": "1 concha", "grams": 85, "kcal": 77, "protein_g": 5, "carbs_g": 14, "fat_g": 0.5, "fiber_g": 5}
+  ],
+  "totals": {"kcal": 650, "protein_g": 45, "carbs_g": 70, "fat_g": 20, "fiber_g": 8},
+  "confidence": "alta",
+  "assumptions": "Porções estimadas visualmente. Temperos e óleos de preparo estimados.",
+  "feedback": "",
+  "suggestions": ""
+}
+
+REGRAS:
+- Estime porções com base no tamanho visual (se foto) ou descrição.
+- Use tabela TACO/IBGE como referência para valores nutricionais de alimentos brasileiros.
+- Inclua óleos de preparo estimados se aplicável.
+- O campo "confidence" pode ser "alta", "média" ou "baixa".
+- feedback e suggestions serão preenchidos depois pelo sistema.
+"""
+
+MEAL_TYPE_LABELS = {
+    "meal_breakfast": "Café da manhã",
+    "meal_morning_snack": "Lanche da manhã",
+    "meal_lunch": "Almoço",
+    "meal_afternoon_snack": "Lanche da tarde",
+    "meal_dinner": "Jantar",
+    "meal_supper": "Ceia",
+}
+
+@api_router.post("/meal-logs")
+async def create_meal_log(data: MealLogCreate, request: Request):
+    payload = await get_current_user(request)
+    
+    if not data.photo_base64 and not data.description:
+        raise HTTPException(status_code=400, detail="Envie uma foto ou descrição da refeição")
+    
+    # Get active plan targets for feedback
+    plan = await db.plans.find_one(
+        {"user_id": payload['user_id'], "status": "ready"},
+        sort=[("created_at", -1)]
+    )
+    plan_id = str(plan['_id']) if plan else None
+    targets = None
+    if plan_id:
+        targets_doc = await db.plan_targets.find_one({"plan_id": plan_id, "user_id": payload['user_id']})
+        if targets_doc:
+            targets = targets_doc.get('daily_targets', {})
+    
+    # Analyze meal with Sonnet
+    try:
+        user_content = []
+        if data.photo_base64 and data.photo_media_type:
+            user_content.append({
+                "type": "image",
+                "source": {"type": "base64", "media_type": data.photo_media_type, "data": data.photo_base64}
+            })
+        
+        text_prompt = MEAL_ANALYSIS_PROMPT
+        if data.description:
+            text_prompt += f"\n\nDescrição da refeição: {data.description}"
+        if not data.photo_base64:
+            text_prompt += "\n\nNão há foto. Analise baseado apenas na descrição textual."
+        
+        meal_label = MEAL_TYPE_LABELS.get(data.meal_type, data.meal_type)
+        text_prompt += f"\n\nTipo de refeição: {meal_label}"
+        text_prompt += f"\nData: {data.date}"
+        
+        user_content.append({"type": "text", "text": text_prompt})
+        
+        msg = anthropicClient.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=2000,
+            temperature=0.2,
+            messages=[{"role": "user", "content": user_content}]
+        )
+        
+        raw = msg.content[0].text.strip()
+        if raw.startswith('```'):
+            raw = raw.split('\n', 1)[1] if '\n' in raw else raw[3:]
+            if raw.endswith('```'):
+                raw = raw[:-3]
+        analysis = json.loads(raw)
+        
+        # Add feedback based on plan targets
+        if targets:
+            totals = analysis.get('totals', {})
+            # Calculate how many meals in the day, estimate per-meal targets
+            meals_count = len(targets.get('meals', ['meal_breakfast', 'meal_lunch', 'meal_dinner'])) if isinstance(targets, dict) else 3
+            if meals_count == 0:
+                meals_count = 3
+            per_meal_kcal = targets.get('kcal', 1800) / meals_count
+            per_meal_prot = targets.get('protein_g', 100) / meals_count
+            
+            kcal_diff = totals.get('kcal', 0) - per_meal_kcal
+            prot_diff = totals.get('protein_g', 0) - per_meal_prot
+            
+            feedback_parts = []
+            if abs(kcal_diff) > 50:
+                if kcal_diff > 0:
+                    feedback_parts.append(f"+{int(kcal_diff)} kcal acima da meta para esta refeição")
+                else:
+                    feedback_parts.append(f"{int(kcal_diff)} kcal abaixo da meta para esta refeição")
+            if abs(prot_diff) > 5:
+                if prot_diff > 0:
+                    feedback_parts.append(f"+{int(prot_diff)}g de proteína acima")
+                else:
+                    feedback_parts.append(f"{int(prot_diff)}g de proteína abaixo")
+            
+            analysis['feedback'] = ". ".join(feedback_parts) if feedback_parts else "Refeição alinhada com o plano!"
+            
+            suggestions = []
+            if prot_diff < -10:
+                suggestions.append("Considere adicionar uma fonte de proteína (ovo, frango, iogurte) nas próximas refeições.")
+            if kcal_diff > 100:
+                suggestions.append("Refeição calórica acima da meta. Compense com refeições mais leves no restante do dia.")
+            if kcal_diff < -100:
+                suggestions.append("Refeição leve. Se sentir fome, faça um lanche saudável entre refeições.")
+            analysis['suggestions'] = " ".join(suggestions) if suggestions else ""
+        
+        status = "analyzed"
+    except Exception as e:
+        logger.error(f"Meal analysis failed: {e}")
+        analysis = {
+            "foods": [],
+            "totals": {"kcal": 0, "protein_g": 0, "carbs_g": 0, "fat_g": 0, "fiber_g": 0},
+            "confidence": "baixa",
+            "assumptions": "Análise falhou. Tente novamente.",
+            "feedback": "Não foi possível analisar esta refeição.",
+            "suggestions": ""
+        }
+        status = "error"
+    
+    log_doc = {
+        "user_id": payload['user_id'],
+        "plan_id": plan_id,
+        "date": data.date,
+        "meal_type": data.meal_type,
+        "description": data.description,
+        "has_photo": bool(data.photo_base64),
+        "ai_analysis": analysis,
+        "status": status,
+        "created_at": datetime.now(timezone.utc)
+    }
+    result = await db.meal_logs.insert_one(log_doc)
+    log_doc['_id'] = result.inserted_id
+    return serialize_doc(log_doc)
+
+@api_router.get("/meal-logs")
+async def get_meal_logs(request: Request, date: str = None):
+    payload = await get_current_user(request)
+    query = {"user_id": payload['user_id']}
+    if date:
+        query["date"] = date
+    logs = await db.meal_logs.find(query).sort("created_at", 1).to_list(100)
+    return [serialize_doc(l) for l in logs]
+
+@api_router.delete("/meal-logs/{log_id}")
+async def delete_meal_log(log_id: str, request: Request):
+    payload = await get_current_user(request)
+    from bson import ObjectId
+    result = await db.meal_logs.delete_one({"_id": ObjectId(log_id), "user_id": payload['user_id']})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Registro não encontrado")
+    return {"deleted": True}
+
+@api_router.get("/meal-logs/calendar")
+async def get_meal_calendar(request: Request, year: int = None, month: int = None):
+    payload = await get_current_user(request)
+    now = datetime.now(timezone.utc)
+    y = year or now.year
+    m = month or now.month
+    
+    prefix = f"{y}-{str(m).zfill(2)}"
+    logs = await db.meal_logs.find(
+        {"user_id": payload['user_id'], "date": {"$regex": f"^{prefix}"}},
+        {"date": 1, "ai_analysis.totals": 1, "meal_type": 1}
+    ).to_list(500)
+    
+    # Get targets
+    targets = None
+    plan = await db.plans.find_one({"user_id": payload['user_id'], "status": "ready"}, sort=[("created_at", -1)])
+    if plan:
+        plan_id = str(plan['_id'])
+        t = await db.plan_targets.find_one({"plan_id": plan_id})
+        if t:
+            targets = t.get('daily_targets', {})
+    
+    # Aggregate by day
+    days = {}
+    for log in logs:
+        d = log['date']
+        if d not in days:
+            days[d] = {"kcal": 0, "protein_g": 0, "carbs_g": 0, "fat_g": 0, "meals_logged": 0}
+        totals = log.get('ai_analysis', {}).get('totals', {})
+        days[d]['kcal'] += totals.get('kcal', 0)
+        days[d]['protein_g'] += totals.get('protein_g', 0)
+        days[d]['carbs_g'] += totals.get('carbs_g', 0)
+        days[d]['fat_g'] += totals.get('fat_g', 0)
+        days[d]['meals_logged'] += 1
+    
+    # Calculate adherence per day
+    calendar = {}
+    target_kcal = targets.get('kcal', 1800) if targets else 1800
+    for d, vals in days.items():
+        ratio = vals['kcal'] / target_kcal if target_kcal > 0 else 0
+        if ratio >= 0.85 and ratio <= 1.15:
+            status = "green"
+        elif ratio >= 0.7 and ratio <= 1.3:
+            status = "yellow"
+        else:
+            status = "red"
+        calendar[d] = {**vals, "status": status, "target_kcal": target_kcal}
+    
+    return {"year": y, "month": m, "days": calendar, "targets": targets}
+
+@api_router.get("/meal-logs/weekly-summary")
+async def get_weekly_summary(request: Request, end_date: str = None):
+    payload = await get_current_user(request)
+    from datetime import timedelta
+    
+    if end_date:
+        end = datetime.strptime(end_date, "%Y-%m-%d")
+    else:
+        end = datetime.now(timezone.utc)
+    start = end - timedelta(days=6)
+    
+    dates = [(start + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(7)]
+    
+    logs = await db.meal_logs.find(
+        {"user_id": payload['user_id'], "date": {"$in": dates}},
+        {"date": 1, "ai_analysis.totals": 1, "meal_type": 1}
+    ).to_list(500)
+    
+    # Get targets
+    targets = None
+    plan = await db.plans.find_one({"user_id": payload['user_id'], "status": "ready"}, sort=[("created_at", -1)])
+    if plan:
+        plan_id = str(plan['_id'])
+        t = await db.plan_targets.find_one({"plan_id": plan_id})
+        if t:
+            targets = t.get('daily_targets', {})
+    
+    # Aggregate
+    daily = {}
+    for d in dates:
+        daily[d] = {"kcal": 0, "protein_g": 0, "carbs_g": 0, "fat_g": 0, "fiber_g": 0, "meals": 0}
+    
+    for log in logs:
+        d = log['date']
+        if d in daily:
+            totals = log.get('ai_analysis', {}).get('totals', {})
+            daily[d]['kcal'] += totals.get('kcal', 0)
+            daily[d]['protein_g'] += totals.get('protein_g', 0)
+            daily[d]['carbs_g'] += totals.get('carbs_g', 0)
+            daily[d]['fat_g'] += totals.get('fat_g', 0)
+            daily[d]['fiber_g'] += totals.get('fiber_g', 0)
+            daily[d]['meals'] += 1
+    
+    # Calculate averages
+    days_with_data = [d for d in dates if daily[d]['meals'] > 0]
+    avg = {"kcal": 0, "protein_g": 0, "carbs_g": 0, "fat_g": 0, "fiber_g": 0}
+    if days_with_data:
+        for d in days_with_data:
+            for k in avg:
+                avg[k] += daily[d][k]
+        for k in avg:
+            avg[k] = round(avg[k] / len(days_with_data), 1)
+    
+    return {
+        "dates": dates,
+        "daily": daily,
+        "averages": avg,
+        "targets": targets,
+        "days_tracked": len(days_with_data)
+    }
+
 # ============ HEALTH CHECK ============
 @api_router.get("/")
 async def root():
-    return {"message": "MealTrack API v1", "status": "healthy"}
+    return {"message": "MealTrack API v2", "status": "healthy"}
 
 # Include router
 app.include_router(api_router)
