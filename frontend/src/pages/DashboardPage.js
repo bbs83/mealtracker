@@ -99,6 +99,22 @@ export default function DashboardPage() {
           </Card>
         </div>
 
+        {/* Tracker CTA */}
+        <Card className="rounded-2xl border border-border bg-card mb-8 hover:shadow-lg transition-shadow duration-200" data-testid="dashboard-tracker-card">
+          <CardContent className="p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Camera className="w-6 h-6 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold mb-1" style={{ fontFamily: "'Fraunces', serif" }}>Acompanhe sua alimentação</h3>
+              <p className="text-sm text-muted-foreground">Registre suas refeições por foto ou texto. A IA analisa o que você comeu e compara com seu plano.</p>
+            </div>
+            <Button onClick={() => navigate('/app/tracker')} data-testid="dashboard-tracker-button">
+              Abrir Tracker <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card className="rounded-2xl border border-border" data-testid="dashboard-history-card">
           <CardHeader>
             <CardTitle className="text-lg" style={{ fontFamily: "'Fraunces', serif" }}>Histórico de planos</CardTitle>
