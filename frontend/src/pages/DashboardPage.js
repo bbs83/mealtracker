@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, FileText, Clock, ChevronRight } from 'lucide-react';
+import { Plus, FileText, Clock, ChevronRight, Camera } from 'lucide-react';
 import axios from 'axios';
 
 export default function DashboardPage() {
