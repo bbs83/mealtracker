@@ -65,8 +65,8 @@ const WeeklyRecall = ({ data, update }) => {
   return (
     <div className="space-y-3">
       <div className="mb-3">
-        <label className="text-sm font-medium block">Recordatorio alimentar semanal</label>
-        <p className="text-xs text-muted-foreground">Descreva o que voce comeu em cada refeicao nos ultimos 7 dias. Quanto mais detalhado, melhor o plano.</p>
+        <label className="text-sm font-medium block">Recordatório alimentar semanal</label>
+        <p className="text-xs text-muted-foreground">Descreva o que você comeu em cada refeição nos últimos 7 dias. Quanto mais detalhado, melhor o plano.</p>
       </div>
 
       {WEEKDAYS.map(day => (
