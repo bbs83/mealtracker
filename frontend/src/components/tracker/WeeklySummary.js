@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { TrendingUp } from 'lucide-react';
 import axios from 'axios';
 
-const WEEKDAY_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'S\u00e1b', 'Dom'];
+const WEEKDAY_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
 const SimpleMiniBar = ({ value, max, color = 'bg-primary' }) => {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
@@ -50,7 +50,7 @@ export default function WeeklySummary() {
         <CardHeader><CardTitle className="text-lg" style={{ fontFamily: "'Fraunces', serif" }}>Resumo semanal</CardTitle></CardHeader>
         <CardContent className="text-center py-8">
           <TrendingUp className="w-10 h-10 text-muted-foreground/20 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Sem dados nesta semana. Comece a registrar suas refei\u00e7\u00f5es!</p>
+          <p className="text-sm text-muted-foreground">Sem dados nesta semana. Comece a registrar suas refeições!</p>
         </CardContent>
       </Card>
     );
@@ -68,7 +68,7 @@ export default function WeeklySummary() {
       <CardContent>
         {/* Calorie bars chart */}
         <div className="mb-6">
-          <p className="text-xs font-medium text-muted-foreground mb-2">CALORIAS DI\u00c1RIAS</p>
+          <p className="text-xs font-medium text-muted-foreground mb-2">CALORIAS DIÁRIAS</p>
           <div className="flex items-end gap-2 h-24">
             {dates.map((d, i) => {
               const kcal = daily[d]?.kcal || 0;
@@ -101,11 +101,11 @@ export default function WeeklySummary() {
 
         {/* Averages */}
         <div>
-          <p className="text-xs font-medium text-muted-foreground mb-2">M\u00c9DIA DI\u00c1RIA ({data.days_tracked} dia(s) com registro)</p>
+          <p className="text-xs font-medium text-muted-foreground mb-2">MÉDIA DIÁRIA ({data.days_tracked} dia(s) com registro)</p>
           <div className="grid grid-cols-4 gap-3">
             {[
               ['Calorias', data.averages?.kcal, data.targets?.kcal, 'kcal'],
-              ['Prote\u00edna', data.averages?.protein_g, data.targets?.protein_g, 'g'],
+              ['Proteína', data.averages?.protein_g, data.targets?.protein_g, 'g'],
               ['Carb', data.averages?.carbs_g, data.targets?.carbs_g, 'g'],
               ['Gordura', data.averages?.fat_g, data.targets?.fat_g, 'g'],
             ].map(([label, avg, target, unit]) => (
