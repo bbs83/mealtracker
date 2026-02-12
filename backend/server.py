@@ -352,7 +352,7 @@ async def generate_plan(assessment_id: str, request: Request):
         "user_id": payload['user_id'],
         "status": "generating",
         "plan_markdown": "",
-        "model": "claude-sonnet-4-5-20250929",
+        "model": "claude-opus-4-6",
         "created_at": datetime.now(timezone.utc),
         "completed_at": None
     }
