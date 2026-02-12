@@ -78,21 +78,34 @@
     }
 }
 
-/* Markdown plan viewer styles */
-.plan-content h1 { @apply text-2xl sm:text-3xl font-semibold mt-8 mb-4; font-family: 'Fraunces', serif; }
-.plan-content h2 { @apply text-xl sm:text-2xl font-semibold mt-8 mb-3; font-family: 'Fraunces', serif; }
-.plan-content h3 { @apply text-lg sm:text-xl font-semibold mt-6 mb-2; font-family: 'Fraunces', serif; }
-.plan-content h4 { @apply text-base font-semibold mt-4 mb-2; }
-.plan-content p { @apply mb-3 leading-7; }
-.plan-content ul { @apply mb-4 pl-6 list-disc space-y-1; }
-.plan-content ol { @apply mb-4 pl-6 list-decimal space-y-1; }
-.plan-content li { @apply leading-7; }
-.plan-content strong { @apply font-semibold; }
+/* Markdown plan viewer styles - Professional formatting */
+.plan-content { @apply text-sm sm:text-base; line-height: 1.8; }
+.plan-content h1 { @apply text-2xl sm:text-3xl font-semibold mt-10 mb-4 pb-2 border-b border-border; font-family: 'Fraunces', serif; color: hsl(var(--foreground)); }
+.plan-content h2 { @apply text-xl sm:text-2xl font-semibold mt-10 mb-4 pb-2 border-b border-border/50; font-family: 'Fraunces', serif; color: hsl(97 20% 36%); }
+.plan-content h3 { @apply text-lg sm:text-xl font-semibold mt-8 mb-3; font-family: 'Fraunces', serif; }
+.plan-content h4 { @apply text-base font-semibold mt-6 mb-2; }
+.plan-content p { @apply mb-4 leading-relaxed; }
+.plan-content ul { @apply mb-4 pl-6 list-disc space-y-1.5; }
+.plan-content ol { @apply mb-4 pl-6 list-decimal space-y-1.5; }
+.plan-content li { @apply leading-relaxed; }
+.plan-content li > p { @apply mb-1; }
+.plan-content strong { @apply font-bold; color: hsl(var(--foreground)); }
 .plan-content em { @apply italic; }
-.plan-content hr { @apply my-6 border-border; }
-.plan-content blockquote { @apply border-l-4 border-primary/30 pl-4 my-4 italic text-muted-foreground; }
-.plan-content table { @apply w-full border-collapse my-6 text-sm; }
-.plan-content thead { @apply bg-secondary; }
-.plan-content th { @apply border border-border px-3 py-2 text-left font-semibold text-sm; }
-.plan-content td { @apply border border-border px-3 py-2 text-sm; }
-.plan-content tbody tr:nth-child(even) { @apply bg-muted/30; }
+.plan-content hr { @apply my-8 border-border; }
+.plan-content blockquote { @apply border-l-4 border-primary/40 pl-4 my-6 italic text-muted-foreground bg-muted/30 py-3 pr-4 rounded-r-lg; }
+.plan-content table { @apply w-full border-collapse my-6 text-sm rounded-lg overflow-hidden; }
+.plan-content thead { @apply bg-primary/10; }
+.plan-content th { @apply border border-border px-3 py-2.5 text-left font-semibold text-xs uppercase tracking-wider; color: hsl(97 20% 36%); }
+.plan-content td { @apply border border-border px-3 py-2 text-sm leading-relaxed; }
+.plan-content tbody tr:nth-child(even) { @apply bg-muted/20; }
+.plan-content tbody tr:hover { @apply bg-muted/40; transition: background-color 0.15s ease; }
+
+/* Print styles for PDF export */
+@media print {
+  .plan-content { font-size: 11pt; line-height: 1.6; }
+  .plan-content h1 { font-size: 20pt; page-break-after: avoid; }
+  .plan-content h2 { font-size: 16pt; page-break-after: avoid; }
+  .plan-content h3 { font-size: 13pt; page-break-after: avoid; }
+  .plan-content table { page-break-inside: avoid; font-size: 9pt; }
+  .plan-content hr { page-break-after: avoid; }
+}
