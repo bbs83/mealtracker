@@ -155,8 +155,8 @@ export default function StepEating({ data, update }) {
       </div>
 
       <div>
-        <label className="text-sm font-medium mb-3 block">Restricoes alimentares</label>
-        <p className="text-xs text-muted-foreground mb-2">Segue alguma dieta especifica?</p>
+        <label className="text-sm font-medium mb-3 block">Restrições alimentares</label>
+        <p className="text-xs text-muted-foreground mb-2">Segue alguma dieta específica?</p>
         <CheckboxGroup options={DIETARY_RESTRICTIONS} selected={data.dietary_restrictions || []} onChange={v => update('dietary_restrictions', v)} testIdPrefix="form-restriction" />
       </div>
 
