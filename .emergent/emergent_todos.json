@@ -45,6 +45,10 @@
   },
   {
     "content": "Phase 3: Full E2E Testing - Signup, Form, Generate, View Plan",
-    "status": "in_progress"
+    "status": "completed"
+  },
+  {
+    "content": "Phase 3: Fix review step human-readable values",
+    "status": "completed"
   }
 ]
