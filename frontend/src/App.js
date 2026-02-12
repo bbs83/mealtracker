@@ -9,6 +9,8 @@ import SignupPage from '@/pages/SignupPage';
 import DashboardPage from '@/pages/DashboardPage';
 import NewAssessmentPage from '@/pages/NewAssessmentPage';
 import PlanViewerPage from '@/pages/PlanViewerPage';
+import TrackerPage from '@/pages/TrackerPage';
+import DayDetailPage from '@/pages/DayDetailPage';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -36,6 +38,8 @@ function App() {
           <Route path="/app" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/app/new" element={<ProtectedRoute><NewAssessmentPage /></ProtectedRoute>} />
           <Route path="/app/plans/:planId" element={<ProtectedRoute><PlanViewerPage /></ProtectedRoute>} />
+          <Route path="/app/tracker" element={<ProtectedRoute><TrackerPage /></ProtectedRoute>} />
+          <Route path="/app/tracker/:date" element={<ProtectedRoute><DayDetailPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
