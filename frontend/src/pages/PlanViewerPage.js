@@ -5,7 +5,7 @@ import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Copy, Check, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
@@ -42,6 +42,20 @@ export default function PlanViewerPage() {
     }
   };
 
+  const handleDownload = () => {
+    if (!plan?.plan_markdown) return;
+    const blob = new Blob([plan.plan_markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `plano-nutricional-${new Date(plan.created_at).toISOString().split('T')[0]}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Plano baixado!');
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     const d = new Date(dateStr);
@@ -58,10 +72,15 @@ export default function PlanViewerPage() {
             <ArrowLeft className="w-4 h-4 mr-1" /> Voltar ao dashboard
           </Button>
           {plan?.status === 'ready' && (
-            <Button variant="secondary" size="sm" onClick={handleCopy} data-testid="plan-copy-button">
-              {copied ? <Check className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />}
-              {copied ? 'Copiado!' : 'Copiar'}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" size="sm" onClick={handleDownload} data-testid="plan-download-button">
+                <Download className="w-4 h-4 mr-1" /> Baixar .md
+              </Button>
+              <Button variant="secondary" size="sm" onClick={handleCopy} data-testid="plan-copy-button">
+                {copied ? <Check className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />}
+                {copied ? 'Copiado!' : 'Copiar'}
+              </Button>
+            </div>
           )}
         </div>
 
@@ -79,6 +98,11 @@ export default function PlanViewerPage() {
             <div className="flex items-center gap-3 mb-6">
               <Badge variant="outline" className="bg-[rgba(127,154,114,0.18)] text-[rgb(58,84,47)] border-[rgba(127,154,114,0.35)]" data-testid="plan-status-badge">Pronto</Badge>
               <span className="text-sm text-muted-foreground">Gerado em {formatDate(plan.created_at)}</span>
+              {plan.input_tokens && (
+                <span className="text-xs text-muted-foreground hidden sm:inline">
+                  ({plan.output_tokens?.toLocaleString()} tokens)
+                </span>
+              )}
             </div>
 
             {/* Markdown content */}

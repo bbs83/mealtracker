@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MEAL_LOCATIONS, DIETARY_RESTRICTIONS } from '@/data/formConstants';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { MEAL_LOCATIONS, DIETARY_RESTRICTIONS, MEAL_DEFS, WEEKDAYS } from '@/data/formConstants';
+import { ChevronDown } from 'lucide-react';
 
 const RadioCards = ({ options, value, onChange, testIdPrefix }) => (
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -50,6 +53,60 @@ const CheckboxGroup = ({ options, selected = [], onChange, testIdPrefix }) => (
   </div>
 );
 
+// Weekly food recall component
+const WeeklyRecall = ({ data, update }) => {
+  const [openDays, setOpenDays] = useState({ mon: true });
+  const activeMeals = MEAL_DEFS.filter(m => data[m.key] !== false);
+
+  const toggleDay = (dayKey) => {
+    setOpenDays(prev => ({ ...prev, [dayKey]: !prev[dayKey] }));
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="mb-3">
+        <label className="text-sm font-medium block">Recordatorio alimentar semanal</label>
+        <p className="text-xs text-muted-foreground">Descreva o que voce comeu em cada refeicao nos ultimos 7 dias. Quanto mais detalhado, melhor o plano.</p>
+      </div>
+
+      {WEEKDAYS.map(day => (
+        <Collapsible key={day.key} open={openDays[day.key]} onOpenChange={() => toggleDay(day.key)}>
+          <CollapsibleTrigger className="w-full flex items-center justify-between p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors duration-200" data-testid={`recall-day-${day.key}`}>
+            <span className="text-sm font-medium">{day.label}</span>
+            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${openDays[day.key] ? 'rotate-180' : ''}`} />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-2 space-y-3 pl-2 border-l-2 border-primary/10 ml-3">
+            {activeMeals.map(meal => (
+              <div key={`${day.key}_${meal.key}`} className="pl-3">
+                <label className="text-xs font-medium text-muted-foreground block mb-1">{meal.label}</label>
+                <Textarea
+                  placeholder={meal.placeholder}
+                  value={data[`recall_${day.key}_${meal.key}`] || ''}
+                  onChange={e => update(`recall_${day.key}_${meal.key}`, e.target.value)}
+                  rows={2}
+                  className="text-sm"
+                  data-testid={`recall-${day.key}-${meal.key}`}
+                />
+              </div>
+            ))}
+            <div className="pl-3">
+              <label className="text-xs font-medium text-muted-foreground block mb-1">Outros (fora das refeicoes)</label>
+              <Textarea
+                placeholder="Beliscou algo? Comeu fora do horario? Descreva aqui."
+                value={data[`recall_${day.key}_extras`] || ''}
+                onChange={e => update(`recall_${day.key}_extras`, e.target.value)}
+                rows={2}
+                className="text-sm"
+                data-testid={`recall-${day.key}-extras`}
+              />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      ))}
+    </div>
+  );
+};
+
 export default function StepEating({ data, update }) {
   return (
     <div className="space-y-6">
@@ -58,31 +115,31 @@ export default function StepEating({ data, update }) {
         <p className="text-sm text-muted-foreground">Seus habitos alimentares atuais e preferencias</p>
       </div>
 
+      {/* Meal availability toggles */}
+      <div>
+        <label className="text-sm font-medium mb-3 block">Quais refeicoes voce consegue fazer no dia a dia?</label>
+        <p className="text-xs text-muted-foreground mb-3">Ative as refeicoes que sao viaveis para sua rotina. Desative as que nao consegue fazer.</p>
+        <div className="space-y-2">
+          {MEAL_DEFS.map(meal => (
+            <div key={meal.key} className="flex items-center justify-between p-3 rounded-xl border border-border bg-card">
+              <span className="text-sm font-medium">{meal.label}</span>
+              <Switch
+                checked={data[meal.key] !== false}
+                onCheckedChange={v => update(meal.key, v)}
+                data-testid={`form-toggle-${meal.key}`}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div>
         <label className="text-sm font-medium mb-3 block">Onde voce costuma fazer suas refeicoes? <span className="text-destructive">*</span></label>
         <RadioCards options={MEAL_LOCATIONS} value={data.meal_location} onChange={v => update('meal_location', v)} testIdPrefix="form-meal-location" />
       </div>
 
-      <div>
-        <label className="text-sm font-medium mb-1.5 block">Quantas refeicoes faz por dia? <span className="text-destructive">*</span></label>
-        <Select value={data.meals_per_day || ''} onValueChange={v => update('meals_per_day', v)}>
-          <SelectTrigger className="max-w-xs" data-testid="form-meals-per-day-select">
-            <SelectValue placeholder="Selecione" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1-2">1-2 refeicoes</SelectItem>
-            <SelectItem value="3">3 refeicoes</SelectItem>
-            <SelectItem value="4-5">4-5 refeicoes</SelectItem>
-            <SelectItem value="6+">6 ou mais</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div>
-        <label className="text-sm font-medium mb-1.5 block">Recordatorio alimentar — dia tipico <span className="text-destructive">*</span></label>
-        <p className="text-xs text-muted-foreground mb-1.5">Descreva tudo que voce come e bebe num dia normal, com horarios aproximados.</p>
-        <Textarea placeholder="Ex: Cafe 7h: cafe com leite + pao integral. Almoco 12h30: arroz, feijao, frango, salada..." value={data.food_diary || ''} onChange={e => update('food_diary', e.target.value)} rows={5} data-testid="form-food-diary-input" />
-      </div>
+      {/* Weekly food recall */}
+      <WeeklyRecall data={data} update={update} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
