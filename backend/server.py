@@ -411,26 +411,34 @@ def _generate_plan_background(plan_id_str: str, assessment_data: dict):
         
         logger.info(f"[BG] Generating nutrition plan {plan_id_str}")
         
-        SUPPORTED_IMG = {'image/jpeg', 'image/png', 'image/gif', 'image/webp'}
-        MAX_B64 = 8_000_000
+        MAX_PDF_B64 = 30_000_000  # ~22MB actual PDF
 
         def add_file_blocks(blocks, file_data, label):
             if not file_data or not file_data.get('base64') or not file_data.get('media_type'):
                 return
             mt = file_data['media_type']
             b64 = file_data['base64']
-            if len(b64) > MAX_B64:
-                logger.warning(f"[BG] Skipping {label}: too large")
-                blocks.append({"type": "text", "text": f"[{label}: arquivo grande demais, use dados textuais do JSON]"})
-                return
-            if mt in SUPPORTED_IMG:
-                blocks.append({"type": "image", "source": {"type": "base64", "media_type": mt, "data": b64}})
-                blocks.append({"type": "text", "text": f"[{label} anexado acima]"})
+            
+            if mt.startswith('image/'):
+                # Process ALL images through PIL (handles HEIC-as-JPEG, resize, compress)
+                processed_b64, processed_mt = _process_image_for_claude(b64)
+                if processed_b64:
+                    blocks.append({"type": "image", "source": {"type": "base64", "media_type": processed_mt, "data": processed_b64}})
+                    blocks.append({"type": "text", "text": f"[{label} anexado acima como imagem]"})
+                    logger.info(f"[BG] {label}: image processed and attached")
+                else:
+                    logger.warning(f"[BG] Could not process image for {label}")
+                    blocks.append({"type": "text", "text": f"[{label}: imagem não pôde ser processada, use dados textuais do JSON]"})
             elif mt == 'application/pdf':
-                blocks.append({"type": "document", "source": {"type": "base64", "media_type": mt, "data": b64}})
-                blocks.append({"type": "text", "text": f"[{label} anexado acima]"})
+                if len(b64) > MAX_PDF_B64:
+                    logger.warning(f"[BG] PDF too large for {label}: {len(b64)} b64 chars")
+                    blocks.append({"type": "text", "text": f"[{label}: PDF muito grande para anexar, use dados textuais do JSON]"})
+                else:
+                    blocks.append({"type": "document", "source": {"type": "base64", "media_type": mt, "data": b64}})
+                    blocks.append({"type": "text", "text": f"[{label} anexado acima como PDF]"})
+                    logger.info(f"[BG] {label}: PDF attached ({len(b64)} b64 chars)")
             else:
-                logger.warning(f"[BG] Skipping {label}: unsupported type {mt}")
+                logger.warning(f"[BG] Unsupported type for {label}: {mt}")
                 blocks.append({"type": "text", "text": f"[{label}: formato {mt} não suportado]"})
         
         file_blocks = []
