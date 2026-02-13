@@ -48,6 +48,11 @@ const cleanFormData = (data) => {
     cleaned.lab_file_attached = data.lab_file_name;
   }
 
+  // If bio file was attached, mark it
+  if (data.bio_file_name) {
+    cleaned.bio_file_attached = data.bio_file_name;
+  }
+
   return cleaned;
 };
 
