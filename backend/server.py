@@ -316,11 +316,29 @@ async def get_me(request: Request):
 @api_router.post("/assessments")
 async def create_assessment(data: AssessmentCreate, request: Request):
     payload = await get_current_user(request)
+    
+    lab_file = data.lab_file.model_dump() if data.lab_file else None
+    bio_file = data.bio_file.model_dump() if data.bio_file else None
+    
+    # If files not provided, carry forward from the most recent assessment
+    if not lab_file or not bio_file:
+        prev_assessment = await db.assessments.find_one(
+            {"user_id": payload['user_id']},
+            sort=[("created_at", -1)]
+        )
+        if prev_assessment:
+            if not lab_file and prev_assessment.get('lab_file'):
+                lab_file = prev_assessment['lab_file']
+                logger.info("Carried forward lab_file from previous assessment")
+            if not bio_file and prev_assessment.get('bio_file'):
+                bio_file = prev_assessment['bio_file']
+                logger.info("Carried forward bio_file from previous assessment")
+    
     assessment_doc = {
         "user_id": payload['user_id'],
         "patient_data": data.patient_data,
-        "lab_file": data.lab_file.model_dump() if data.lab_file else None,
-        "bio_file": data.bio_file.model_dump() if data.bio_file else None,
+        "lab_file": lab_file,
+        "bio_file": bio_file,
         "created_at": datetime.now(timezone.utc),
         "status": "completed"
     }
