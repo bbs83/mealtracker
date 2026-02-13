@@ -178,29 +178,63 @@ export default function NewAssessmentPage() {
         };
       }
 
+      // 1. Create assessment
       const assessmentRes = await axios.post(
         `${API}/assessments`, payload, { headers: getAuthHeaders() }
       );
       const assessmentId = assessmentRes.data.id;
 
+      // 2. Trigger plan generation (returns immediately, runs in background)
       const planRes = await axios.post(
         `${API}/assessments/${assessmentId}/generate-plan`, {},
-        { headers: getAuthHeaders(), timeout: 600000 }
+        { headers: getAuthHeaders(), timeout: 30000 }
       );
+      const planId = planRes.data.id;
 
-      // Clear draft after successful generation
+      // 3. Clear draft
       await axios.delete(`${API}/form-draft`, { headers: getAuthHeaders() }).catch(() => {});
 
+      // 4. If already ready (cached), redirect immediately
       if (planRes.data.status === 'ready') {
         toast.success('Plano nutricional gerado com sucesso!');
-        navigate(`/app/plans/${planRes.data.id}`);
-      } else if (planRes.data.status === 'error') {
-        toast.error('Erro ao gerar o plano. Tente novamente.');
-        setGenerating(false);
+        navigate(`/app/plans/${planId}`);
+        return;
       }
+
+      // 5. Poll for plan status until ready or error
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusRes = await axios.get(`${API}/plans/${planId}`, { headers: getAuthHeaders() });
+          if (statusRes.data.status === 'ready') {
+            clearInterval(pollInterval);
+            toast.success('Plano nutricional gerado com sucesso!');
+            navigate(`/app/plans/${planId}`);
+          } else if (statusRes.data.status === 'error') {
+            clearInterval(pollInterval);
+            toast.error('Erro ao gerar o plano: ' + (statusRes.data.error_message || 'Tente novamente.'));
+            setGenerating(false);
+            setSubmitting(false);
+          }
+          // else still "generating", keep polling
+        } catch (pollErr) {
+          // Network error during poll, keep trying
+          console.warn('Poll error:', pollErr);
+        }
+      }, 5000); // Poll every 5 seconds
+
+      // Safety: stop polling after 15 minutes
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        if (generating) {
+          toast.error('A geração está demorando mais que o esperado. Verifique o dashboard em alguns minutos.');
+          setGenerating(false);
+          setSubmitting(false);
+        }
+      }, 15 * 60 * 1000);
+
     } catch (err) {
-      console.error('Error generating plan:', err);
-      toast.error('Erro ao gerar o plano. Verifique sua conexão e tente novamente.');
+      console.error('Error starting plan generation:', err);
+      toast.error('Erro ao iniciar geração do plano. Verifique sua conexão e tente novamente.');
       setGenerating(false);
     }
     setSubmitting(false);
