@@ -598,9 +598,9 @@ class FormDraftSave(BaseModel):
 async def get_form_draft(request: Request):
     payload = await get_current_user(request)
     
-    # 1. Check for existing draft
+    # 1. Check for existing draft with actual data
     draft = await db.form_drafts.find_one({"user_id": payload['user_id']})
-    if draft:
+    if draft and draft.get("form_data") and len(draft["form_data"]) > 0:
         return {"source": "draft", "data": serialize_doc(draft)}
     
     # 2. Fallback: load from last assessment's patient_data
@@ -608,7 +608,7 @@ async def get_form_draft(request: Request):
         {"user_id": payload['user_id']},
         sort=[("created_at", -1)]
     )
-    if last_assessment:
+    if last_assessment and last_assessment.get('patient_data') and len(last_assessment['patient_data']) > 0:
         return {
             "source": "last_assessment",
             "data": {
