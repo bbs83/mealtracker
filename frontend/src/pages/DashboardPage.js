@@ -39,26 +39,6 @@ export default function DashboardPage() {
     fetchData();
   }, [API, getAuthHeaders]);
 
-  const handleRegenerate = async () => {
-    if (!pendingAssessment || regenerating) return;
-    setRegenerating(true);
-    try {
-      const res = await axios.post(
-        `${API}/assessments/${pendingAssessment.id}/generate-plan`, {},
-        { headers: getAuthHeaders(), timeout: 600000 }
-      );
-      if (res.data.status === 'ready') {
-        toast.success('Plano gerado com sucesso!');
-        navigate(`/app/plans/${res.data.id}`);
-      } else {
-        toast.error('Erro ao gerar plano. Tente novamente.');
-      }
-    } catch (err) {
-      toast.error('Erro na geração. Tente novamente.');
-    }
-    setRegenerating(false);
-  };
-
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     const d = new Date(dateStr);
