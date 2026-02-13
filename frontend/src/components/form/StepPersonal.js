@@ -122,7 +122,7 @@ export default function StepPersonal({ data, update }) {
         <h3 className="text-base font-semibold mb-1" style={{ fontFamily: "'Fraunces', serif" }}>Bioimpedância / Composição corporal</h3>
         <p className="text-xs text-muted-foreground mb-4">Se você fez teste de bioimpedância ou DEXA recentemente, anexe o resultado ou preencha os dados abaixo. Isso ajuda muito na personalização do plano.</p>
 
-        <input ref={bioFileRef} type="file" accept="image/*,.pdf" onChange={handleBioFileUpload} className="hidden" data-testid="form-bio-file-input" />
+        <input ref={bioFileRef} type="file" accept="image/*,.pdf,.heic,.heif" onChange={handleBioFileUpload} className="hidden" data-testid="form-bio-file-input" />
 
         {data.bio_file_name ? (
           <div className="flex items-center gap-3 p-3 rounded-xl border border-primary/30 bg-primary/5 mb-3" data-testid="form-bio-file-attached">
