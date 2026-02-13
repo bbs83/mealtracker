@@ -26,10 +26,14 @@ export default function DashboardPage() {
         ]);
         setPlans(plansRes.data);
         
-        // Find assessments without plans (failed generation)
-        const planAssessmentIds = new Set(plansRes.data.map(p => p.assessment_id));
-        const unplanned = assessRes.data.find(a => !planAssessmentIds.has(a.id));
-        if (unplanned) setPendingAssessment(unplanned);
+        // Only show pending if the LATEST assessment has no ready plan
+        const latestAssess = assessRes.data[0]; // Already sorted by created_at desc
+        if (latestAssess) {
+          const hasReadyPlan = plansRes.data.some(p => p.assessment_id === latestAssess.id && p.status === 'ready');
+          if (!hasReadyPlan) {
+            setPendingAssessment(latestAssess);
+          }
+        }
       } catch (err) {
         console.error('Error fetching data:', err);
       }
