@@ -54,16 +54,6 @@ export default function StepHealth({ data, update }) {
     };
     reader.readAsDataURL(file);
   };
-    reader.onload = () => {
-      const base64 = reader.result.split(',')[1];
-      const mediaType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
-      update('lab_file_base64', base64);
-      update('lab_file_media_type', mediaType);
-      update('lab_file_name', file.name);
-      toast.success(`Arquivo "${file.name}" anexado com sucesso!`);
-    };
-    reader.readAsDataURL(file);
-  };
 
   const removeFile = () => {
     update('lab_file_base64', null);
