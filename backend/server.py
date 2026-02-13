@@ -388,36 +388,44 @@ async def generate_plan(assessment_id: str, request: Request):
         
         # Build user content - supports multimodal if lab file is attached
         user_content = []
+        # Add lab file if attached
         lab_file = assessment.get('lab_file')
         if lab_file and lab_file.get('base64') and lab_file.get('media_type'):
             media_type = lab_file['media_type']
             if media_type.startswith('image/'):
                 user_content.append({
                     "type": "image",
-                    "source": {
-                        "type": "base64",
-                        "media_type": media_type,
-                        "data": lab_file['base64']
-                    }
+                    "source": {"type": "base64", "media_type": media_type, "data": lab_file['base64']}
                 })
             elif media_type == 'application/pdf':
                 user_content.append({
                     "type": "document",
-                    "source": {
-                        "type": "base64",
-                        "media_type": media_type,
-                        "data": lab_file['base64']
-                    }
+                    "source": {"type": "base64", "media_type": media_type, "data": lab_file['base64']}
                 })
-            user_content.append({
-                "type": "text",
-                "text": "Gere meu plano nutricional completo com base nos dados informados. Os exames laboratoriais foram anexados acima como imagem/documento."
-            })
-        else:
-            user_content.append({
-                "type": "text",
-                "text": "Gere meu plano nutricional completo com base nos dados informados."
-            })
+            user_content.append({"type": "text", "text": "[EXAMES LABORATORIAIS anexados acima]"})
+        
+        # Add bioimpedance file if attached
+        bio_file = assessment.get('bio_file')
+        if bio_file and bio_file.get('base64') and bio_file.get('media_type'):
+            media_type = bio_file['media_type']
+            if media_type.startswith('image/'):
+                user_content.append({
+                    "type": "image",
+                    "source": {"type": "base64", "media_type": media_type, "data": bio_file['base64']}
+                })
+            elif media_type == 'application/pdf':
+                user_content.append({
+                    "type": "document",
+                    "source": {"type": "base64", "media_type": media_type, "data": bio_file['base64']}
+                })
+            user_content.append({"type": "text", "text": "[BIOIMPEDÂNCIA / COMPOSIÇÃO CORPORAL anexada acima]"})
+        
+        # Final instruction text
+        has_attachments = bool(lab_file and lab_file.get('base64')) or bool(bio_file and bio_file.get('base64'))
+        instruction = "Gere meu plano nutricional completo com base nos dados informados."
+        if has_attachments:
+            instruction += " Considere os documentos/imagens anexados acima na sua análise."
+        user_content.append({"type": "text", "text": instruction})
         
         message = anthropicClient.messages.create(
             model="claude-opus-4-6",
