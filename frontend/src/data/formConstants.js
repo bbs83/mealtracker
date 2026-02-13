@@ -108,7 +108,7 @@ export const DIETARY_RESTRICTIONS = [
 ];
 
 export const REVIEW_SECTIONS = [
-  { id: 'personal', label: 'Dados Pessoais', fields: ['name', 'age', 'sex', 'weight', 'height', 'waist', 'hip', 'weight_history'] },
+  { id: 'personal', label: 'Dados Pessoais', fields: ['name', 'age', 'sex', 'weight', 'height', 'waist', 'hip', 'weight_history', 'bio_file_name', 'bio_results'] },
   { id: 'goals', label: 'Objetivo', fields: ['primary_goal', 'target_weight', 'clinical_goal_detail', 'goal_notes'] },
   { id: 'health', label: 'Saúde', fields: ['conditions', 'other_conditions', 'allergies', 'other_allergies', 'medications', 'lab_results', 'lab_file_name', 'family_history'] },
   { id: 'lifestyle', label: 'Rotina', fields: ['wake_time', 'sleep_time', 'sleep_hours_calculated', 'activity_level', 'exercise_detail', 'exercise_time', 'exercise_meal_timing', 'stress_level', 'occupation', 'alcohol', 'alcohol_frequency', 'smoking'] },
