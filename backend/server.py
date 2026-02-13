@@ -490,6 +490,60 @@ async def get_plan(plan_id: str, request: Request):
         raise HTTPException(status_code=404, detail="Plano não encontrado")
     return serialize_doc(plan)
 
+# ============ FORM DRAFT (auto-save) ============
+class FormDraftSave(BaseModel):
+    form_data: Dict[str, Any]
+    current_step: int = 0
+
+@api_router.get("/form-draft")
+async def get_form_draft(request: Request):
+    payload = await get_current_user(request)
+    
+    # 1. Check for existing draft
+    draft = await db.form_drafts.find_one({"user_id": payload['user_id']})
+    if draft:
+        return {"source": "draft", "data": serialize_doc(draft)}
+    
+    # 2. Fallback: load from last assessment's patient_data
+    last_assessment = await db.assessments.find_one(
+        {"user_id": payload['user_id']},
+        sort=[("created_at", -1)]
+    )
+    if last_assessment:
+        return {
+            "source": "last_assessment",
+            "data": {
+                "form_data": last_assessment.get('patient_data', {}),
+                "current_step": 0,
+                "assessment_id": str(last_assessment['_id'])
+            }
+        }
+    
+    return {"source": "empty", "data": None}
+
+@api_router.post("/form-draft")
+async def save_form_draft(data: FormDraftSave, request: Request):
+    payload = await get_current_user(request)
+    
+    # Upsert: one draft per user
+    await db.form_drafts.update_one(
+        {"user_id": payload['user_id']},
+        {"$set": {
+            "user_id": payload['user_id'],
+            "form_data": data.form_data,
+            "current_step": data.current_step,
+            "updated_at": datetime.now(timezone.utc)
+        }},
+        upsert=True
+    )
+    return {"saved": True}
+
+@api_router.delete("/form-draft")
+async def delete_form_draft(request: Request):
+    payload = await get_current_user(request)
+    await db.form_drafts.delete_many({"user_id": payload['user_id']})
+    return {"deleted": True}
+
 # ============ TRACKER: MODELS ============
 class MealLogCreate(BaseModel):
     date: str  # YYYY-MM-DD
