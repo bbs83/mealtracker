@@ -24,16 +24,11 @@ export default function StepPersonal({ data, update }) {
       toast.error('Arquivo muito grande. Máximo 10MB.');
       return;
     }
-    // Check for unsupported formats
-    const name = file.name.toLowerCase();
-    if (name.endsWith('.heic') || name.endsWith('.heif')) {
-      toast.error('Formato HEIC não suportado. Por favor, converta para JPG ou PNG antes de enviar.');
-      return;
-    }
     const reader = new FileReader();
     reader.onload = () => {
       const base64 = reader.result.split(',')[1];
-      const mediaType = file.type || (name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+      const name = file.name.toLowerCase();
+      const mediaType = file.type || (name.endsWith('.pdf') ? 'application/pdf' : name.endsWith('.heic') || name.endsWith('.heif') ? 'image/heic' : 'image/jpeg');
       update('bio_file_base64', base64);
       update('bio_file_media_type', mediaType);
       update('bio_file_name', file.name);
