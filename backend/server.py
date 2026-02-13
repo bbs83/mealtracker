@@ -138,7 +138,7 @@ Diretrizes gerais (ajuste conforme contexto clínico):
 - Considere interações medicamento-nutriente relevantes.
 - Se o paciente for gestante ou lactante, ajuste as necessidades.
 
-### 1.4 Análise Detalhada da Alimentação Atual
+### 1.5 Análise Detalhada da Alimentação Atual
 
 **IMPORTANTE**: Faça uma análise APROFUNDADA e DETALHADA do recordatório alimentar semanal do paciente. Para cada dia informado:
 
