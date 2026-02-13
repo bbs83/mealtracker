@@ -349,6 +349,88 @@ async def get_assessment(assessment_id: str, request: Request):
     return serialize_doc(assessment)
 
 # ============ PLAN GENERATION ============
+import threading
+from pymongo import MongoClient as SyncMongoClient
+
+# Sync MongoDB client for background threads
+sync_client = SyncMongoClient(mongo_url)
+sync_db = sync_client[os.environ.get('DB_NAME', 'mealtrack')]
+
+def _generate_plan_background(plan_id_str: str, assessment_data: dict):
+    """Run plan generation in background thread (sync) so it doesn't block the request."""
+    from bson import ObjectId
+    try:
+        patient_json = json.dumps(assessment_data.get('patient_data', {}), ensure_ascii=False, indent=2)
+        system_prompt = PROMPT_TEMPLATE.replace('{PATIENT_JSON}', patient_json)
+        
+        logger.info(f"[BG] Generating nutrition plan {plan_id_str}")
+        
+        SUPPORTED_IMG = {'image/jpeg', 'image/png', 'image/gif', 'image/webp'}
+        MAX_B64 = 8_000_000
+
+        def add_file_blocks(blocks, file_data, label):
+            if not file_data or not file_data.get('base64') or not file_data.get('media_type'):
+                return
+            mt = file_data['media_type']
+            b64 = file_data['base64']
+            if len(b64) > MAX_B64:
+                logger.warning(f"[BG] Skipping {label}: too large")
+                blocks.append({"type": "text", "text": f"[{label}: arquivo grande demais, use dados textuais do JSON]"})
+                return
+            if mt in SUPPORTED_IMG:
+                blocks.append({"type": "image", "source": {"type": "base64", "media_type": mt, "data": b64}})
+                blocks.append({"type": "text", "text": f"[{label} anexado acima]"})
+            elif mt == 'application/pdf':
+                blocks.append({"type": "document", "source": {"type": "base64", "media_type": mt, "data": b64}})
+                blocks.append({"type": "text", "text": f"[{label} anexado acima]"})
+            else:
+                logger.warning(f"[BG] Skipping {label}: unsupported type {mt}")
+                blocks.append({"type": "text", "text": f"[{label}: formato {mt} não suportado]"})
+        
+        file_blocks = []
+        add_file_blocks(file_blocks, assessment_data.get('lab_file'), 'EXAMES LABORATORIAIS')
+        add_file_blocks(file_blocks, assessment_data.get('bio_file'), 'BIOIMPEDÂNCIA')
+        
+        instruction = "Gere meu plano nutricional completo com base nos dados informados."
+        if file_blocks:
+            instruction += " Considere os documentos/imagens anexados na sua análise."
+        user_content = file_blocks + [{"type": "text", "text": instruction}]
+
+        try:
+            message = anthropicClient.messages.create(
+                model="claude-opus-4-6", max_tokens=16000, temperature=0.4,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_content}]
+            )
+        except anthropic.BadRequestError as file_err:
+            logger.warning(f"[BG] Attachment error: {file_err}. Retrying text-only...")
+            fallback = instruction + " (Os arquivos não puderam ser processados. Use dados textuais do JSON.)"
+            message = anthropicClient.messages.create(
+                model="claude-opus-4-6", max_tokens=16000, temperature=0.4,
+                system=system_prompt,
+                messages=[{"role": "user", "content": fallback}]
+            )
+
+        plan_markdown = message.content[0].text
+        logger.info(f"[BG] Plan generated: {len(plan_markdown)} chars, {message.usage.output_tokens} tokens")
+        
+        sync_db.plans.update_one(
+            {"_id": ObjectId(plan_id_str)},
+            {"$set": {
+                "status": "ready",
+                "plan_markdown": plan_markdown,
+                "completed_at": datetime.now(timezone.utc),
+                "input_tokens": message.usage.input_tokens,
+                "output_tokens": message.usage.output_tokens
+            }}
+        )
+    except Exception as e:
+        logger.error(f"[BG] Plan generation failed: {e}")
+        sync_db.plans.update_one(
+            {"_id": ObjectId(plan_id_str)},
+            {"$set": {"status": "error", "error_message": str(e)}}
+        )
+
 @api_router.post("/assessments/{assessment_id}/generate-plan")
 async def generate_plan(assessment_id: str, request: Request):
     payload = await get_current_user(request)
@@ -360,12 +442,19 @@ async def generate_plan(assessment_id: str, request: Request):
     if not assessment:
         raise HTTPException(status_code=404, detail="Avaliação não encontrada")
     
-    # Check if plan already exists for this assessment - if error, delete and retry
+    # Check if plan already exists - if error/stuck, delete and retry
     existing_plan = await db.plans.find_one({"assessment_id": assessment_id})
     if existing_plan:
-        if existing_plan.get('status') == 'error':
+        if existing_plan.get('status') in ('error', 'generating'):
+            # Check if generating for more than 15 min (stuck)
+            created = existing_plan.get('created_at')
+            if existing_plan.get('status') == 'generating' and created:
+                age_min = (datetime.now(timezone.utc) - created).total_seconds() / 60
+                if age_min < 12:
+                    # Still generating, return current status
+                    return serialize_doc(existing_plan)
             await db.plans.delete_one({"_id": existing_plan['_id']})
-            logger.info(f"Deleted failed plan for assessment {assessment_id}, retrying")
+            logger.info(f"Deleted failed/stuck plan for assessment {assessment_id}")
         else:
             return serialize_doc(existing_plan)
     
@@ -380,93 +469,22 @@ async def generate_plan(assessment_id: str, request: Request):
         "completed_at": None
     }
     result = await db.plans.insert_one(plan_doc)
-    plan_id = str(result.inserted_id)
     plan_doc['_id'] = result.inserted_id
     
-    # Generate plan synchronously (frontend will show loading)
-    try:
-        patient_json = json.dumps(assessment['patient_data'], ensure_ascii=False, indent=2)
-        system_prompt = PROMPT_TEMPLATE.replace('{PATIENT_JSON}', patient_json)
-        
-        logger.info(f"Generating nutrition plan for assessment {assessment_id}")
-        
-        # Supported formats for Claude Vision
-        SUPPORTED_IMG = {'image/jpeg', 'image/png', 'image/gif', 'image/webp'}
-        MAX_B64 = 8_000_000  # ~6MB file
-        
-        def add_file_blocks(blocks, file_data, label):
-            if not file_data or not file_data.get('base64') or not file_data.get('media_type'):
-                return
-            mt = file_data['media_type']
-            b64 = file_data['base64']
-            if len(b64) > MAX_B64:
-                logger.warning(f"Skipping {label}: too large ({len(b64)} b64 chars)")
-                blocks.append({"type": "text", "text": f"[{label}: arquivo grande demais para anexar, use dados textuais do JSON]"})
-                return
-            if mt in SUPPORTED_IMG:
-                blocks.append({"type": "image", "source": {"type": "base64", "media_type": mt, "data": b64}})
-                blocks.append({"type": "text", "text": f"[{label} anexado acima]"})
-            elif mt == 'application/pdf':
-                blocks.append({"type": "document", "source": {"type": "base64", "media_type": mt, "data": b64}})
-                blocks.append({"type": "text", "text": f"[{label} anexado acima]"})
-            else:
-                logger.warning(f"Skipping {label}: unsupported type {mt}")
-                blocks.append({"type": "text", "text": f"[{label}: formato {mt} não suportado, use dados textuais do JSON]"})
-        
-        file_blocks = []
-        add_file_blocks(file_blocks, assessment.get('lab_file'), 'EXAMES LABORATORIAIS')
-        add_file_blocks(file_blocks, assessment.get('bio_file'), 'BIOIMPEDÂNCIA')
-        
-        instruction = "Gere meu plano nutricional completo com base nos dados informados."
-        if file_blocks:
-            instruction += " Considere os documentos/imagens anexados na sua análise."
-        
-        user_content = file_blocks + [{"type": "text", "text": instruction}]
-        
-        # Try with attachments, fallback to text-only if files fail
-        try:
-            message = anthropicClient.messages.create(
-                model="claude-opus-4-6",
-                max_tokens=16000,
-                temperature=0.4,
-                system=system_prompt,
-                messages=[{"role": "user", "content": user_content}]
-            )
-        except anthropic.BadRequestError as file_err:
-            logger.warning(f"Attachment error: {file_err}. Retrying text-only...")
-            fallback_text = instruction + " (Os arquivos de exames/bioimpedância não puderam ser processados visualmente. Baseie-se nos dados textuais incluídos no JSON do paciente.)"
-            message = anthropicClient.messages.create(
-                model="claude-opus-4-6",
-                max_tokens=16000,
-                temperature=0.4,
-                system=system_prompt,
-                messages=[{"role": "user", "content": fallback_text}]
-            )
-        plan_markdown = message.content[0].text
-        logger.info(f"Plan generated: {len(plan_markdown)} chars, {message.usage.output_tokens} tokens")
-        
-        await db.plans.update_one(
-            {"_id": result.inserted_id},
-            {"$set": {
-                "status": "ready",
-                "plan_markdown": plan_markdown,
-                "completed_at": datetime.now(timezone.utc),
-                "input_tokens": message.usage.input_tokens,
-                "output_tokens": message.usage.output_tokens
-            }}
-        )
-        plan_doc['status'] = 'ready'
-        plan_doc['plan_markdown'] = plan_markdown
-        
-    except Exception as e:
-        logger.error(f"Plan generation failed: {e}")
-        await db.plans.update_one(
-            {"_id": result.inserted_id},
-            {"$set": {"status": "error", "error_message": str(e)}}
-        )
-        plan_doc['status'] = 'error'
-        plan_doc['error_message'] = str(e)
+    # Launch background generation thread
+    assessment_copy = {
+        'patient_data': assessment.get('patient_data', {}),
+        'lab_file': assessment.get('lab_file'),
+        'bio_file': assessment.get('bio_file'),
+    }
+    thread = threading.Thread(
+        target=_generate_plan_background,
+        args=(str(result.inserted_id), assessment_copy),
+        daemon=True
+    )
+    thread.start()
     
+    # Return immediately with "generating" status
     return serialize_doc(plan_doc)
 
 @api_router.get("/plans")
