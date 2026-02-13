@@ -450,20 +450,41 @@ def _generate_plan_background(plan_id_str: str, assessment_data: dict):
             instruction += " Considere os documentos/imagens anexados na sua análise."
         user_content = file_blocks + [{"type": "text", "text": instruction}]
 
+        # Try with all files first
         try:
+            logger.info(f"[BG] Attempting with {len(file_blocks)} file blocks...")
             message = anthropicClient.messages.create(
                 model="claude-opus-4-6", max_tokens=16000, temperature=0.4,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_content}]
             )
         except anthropic.BadRequestError as file_err:
-            logger.warning(f"[BG] Attachment error: {file_err}. Retrying text-only...")
-            fallback = instruction + " (Os arquivos não puderam ser processados. Use dados textuais do JSON.)"
-            message = anthropicClient.messages.create(
-                model="claude-opus-4-6", max_tokens=16000, temperature=0.4,
-                system=system_prompt,
-                messages=[{"role": "user", "content": fallback}]
-            )
+            logger.warning(f"[BG] Attachment error: {file_err}")
+            # Retry 2: try with only PDF documents (no images)
+            pdf_blocks = [b for b in file_blocks if b.get("type") == "document" or (b.get("type") == "text" and "PDF" in b.get("text", ""))]
+            if pdf_blocks:
+                try:
+                    logger.info(f"[BG] Retrying with PDFs only ({len(pdf_blocks)} blocks)...")
+                    retry_content = pdf_blocks + [{"type": "text", "text": instruction + " (Nota: apenas o PDF foi anexado; a imagem não pôde ser processada.)"}]
+                    message = anthropicClient.messages.create(
+                        model="claude-opus-4-6", max_tokens=16000, temperature=0.4,
+                        system=system_prompt,
+                        messages=[{"role": "user", "content": retry_content}]
+                    )
+                except anthropic.BadRequestError:
+                    logger.warning(f"[BG] PDF-only also failed. Falling back to text-only.")
+                    message = anthropicClient.messages.create(
+                        model="claude-opus-4-6", max_tokens=16000, temperature=0.4,
+                        system=system_prompt,
+                        messages=[{"role": "user", "content": instruction + " (Os arquivos não puderam ser processados. Use dados textuais do JSON.)"}]
+                    )
+            else:
+                logger.warning(f"[BG] No PDFs to retry. Falling back to text-only.")
+                message = anthropicClient.messages.create(
+                    model="claude-opus-4-6", max_tokens=16000, temperature=0.4,
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": instruction + " (Os arquivos não puderam ser processados. Use dados textuais do JSON.)"}]
+                )
 
         plan_markdown = message.content[0].text
         logger.info(f"[BG] Plan generated: {len(plan_markdown)} chars, {message.usage.output_tokens} tokens")
