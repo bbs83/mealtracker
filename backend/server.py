@@ -360,10 +360,14 @@ async def generate_plan(assessment_id: str, request: Request):
     if not assessment:
         raise HTTPException(status_code=404, detail="Avaliação não encontrada")
     
-    # Check if plan already exists for this assessment
+    # Check if plan already exists for this assessment - if error, delete and retry
     existing_plan = await db.plans.find_one({"assessment_id": assessment_id})
     if existing_plan:
-        return serialize_doc(existing_plan)
+        if existing_plan.get('status') == 'error':
+            await db.plans.delete_one({"_id": existing_plan['_id']})
+            logger.info(f"Deleted failed plan for assessment {assessment_id}, retrying")
+        else:
+            return serialize_doc(existing_plan)
     
     # Create plan doc with generating status
     plan_doc = {
