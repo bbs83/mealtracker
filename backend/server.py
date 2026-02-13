@@ -350,11 +350,57 @@ async def get_assessment(assessment_id: str, request: Request):
 
 # ============ PLAN GENERATION ============
 import threading
+import base64 as b64module
+import io
 from pymongo import MongoClient as SyncMongoClient
+from PIL import Image
 
 # Sync MongoDB client for background threads
 sync_client = SyncMongoClient(mongo_url)
 sync_db = sync_client[os.environ.get('DB_NAME', 'mealtrack')]
+
+def _process_image_for_claude(b64_data: str, max_size_px: int = 1500, quality: int = 80) -> tuple:
+    """Decode image, convert to JPEG, resize if needed, return (new_base64, 'image/jpeg').
+    Handles HEIC-disguised-as-JPEG and other format issues by re-encoding through PIL."""
+    try:
+        raw_bytes = b64module.b64decode(b64_data)
+        img = Image.open(io.BytesIO(raw_bytes))
+        
+        # Convert to RGB (handles RGBA, palette, etc.)
+        if img.mode in ('RGBA', 'LA', 'P'):
+            img = img.convert('RGB')
+        elif img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        # Resize if too large
+        w, h = img.size
+        if max(w, h) > max_size_px:
+            ratio = max_size_px / max(w, h)
+            new_w, new_h = int(w * ratio), int(h * ratio)
+            img = img.resize((new_w, new_h), Image.LANCZOS)
+            logger.info(f"Image resized from {w}x{h} to {new_w}x{new_h}")
+        
+        # Encode as JPEG
+        buf = io.BytesIO()
+        img.save(buf, format='JPEG', quality=quality, optimize=True)
+        new_b64 = b64module.b64encode(buf.getvalue()).decode('utf-8')
+        
+        # Check final size (Claude limit: 5MB base64)
+        if len(new_b64) > 5_000_000:
+            # Try with lower quality
+            buf = io.BytesIO()
+            img.save(buf, format='JPEG', quality=50, optimize=True)
+            new_b64 = b64module.b64encode(buf.getvalue()).decode('utf-8')
+        
+        if len(new_b64) > 5_000_000:
+            logger.warning(f"Image still too large after compression: {len(new_b64)} b64 chars")
+            return None, None
+        
+        logger.info(f"Image processed: {len(b64_data)} -> {len(new_b64)} b64 chars")
+        return new_b64, 'image/jpeg'
+    except Exception as e:
+        logger.error(f"Image processing failed: {e}")
+        return None, None
 
 def _generate_plan_background(plan_id_str: str, assessment_data: dict):
     """Run plan generation in background thread (sync) so it doesn't block the request."""
