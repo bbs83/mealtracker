@@ -68,6 +68,7 @@ class LabFile(BaseModel):
 class AssessmentCreate(BaseModel):
     patient_data: Dict[str, Any]
     lab_file: Optional[LabFile] = None
+    bio_file: Optional[LabFile] = None
 
 class GeneratePlanRequest(BaseModel):
     pass
