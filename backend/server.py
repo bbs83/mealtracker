@@ -90,7 +90,24 @@ Com base nos dados do paciente acima, elabore um **plano nutricional completo e 
 
 Antes de montar o plano, faça os cálculos e análises necessários. Apresente-os de forma clara e visualmente organizada.
 
-### 1.1 Cálculo do Gasto Energético
+### 1.1 Análise de Composição Corporal e Antropometria
+
+Antes dos cálculos energéticos, faça uma análise completa da composição corporal do paciente:
+
+1. **IMC (Índice de Massa Corporal)**: Calcule IMC = peso / (altura em m)² e classifique (abaixo do peso, eutrófico, sobrepeso, obesidade grau I/II/III).
+2. **Relação cintura-quadril (RCQ)**: Se cintura e quadril foram informados, calcule RCQ e avalie risco cardiovascular.
+3. **Circunferência da cintura**: Avalie risco metabólico com base nos pontos de corte (>80cm mulheres, >94cm homens = risco elevado).
+4. **Análise da bioimpedância/DEXA**: Se dados de bioimpedância foram fornecidos (arquivo ou texto), analise:
+   - Percentual de gordura corporal e classificação (essencial, atleta, fitness, aceitável, obesidade)
+   - Massa magra vs massa gorda
+   - Água corporal total
+   - Taxa metabólica basal medida vs calculada (comparar se disponível)
+   - Gordura visceral
+   - Idade metabólica vs idade cronológica
+5. **Peso ideal estimado**: Com base na composição corporal, estime faixas de peso saudável.
+6. Apresente tudo em uma **tabela resumo** clara e visualmente organizada.
+
+### 1.2 Cálculo do Gasto Energético
 - Calcule a **Taxa Metabólica Basal (TMB)** usando a fórmula de Mifflin-St Jeor:
   - Homens: TMB = (10 × peso em kg) + (6,25 × altura em cm) − (5 × idade) + 5
   - Mulheres: TMB = (10 × peso em kg) + (6,25 × altura em cm) − (5 × idade) − 161
