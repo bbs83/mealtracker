@@ -390,57 +390,58 @@ async def generate_plan(assessment_id: str, request: Request):
         
         logger.info(f"Generating nutrition plan for assessment {assessment_id}")
         
-        # Build user content - supports multimodal if lab file is attached
-        user_content = []
-        # Add lab file if attached
-        lab_file = assessment.get('lab_file')
-        if lab_file and lab_file.get('base64') and lab_file.get('media_type'):
-            media_type = lab_file['media_type']
-            if media_type.startswith('image/'):
-                user_content.append({
-                    "type": "image",
-                    "source": {"type": "base64", "media_type": media_type, "data": lab_file['base64']}
-                })
-            elif media_type == 'application/pdf':
-                user_content.append({
-                    "type": "document",
-                    "source": {"type": "base64", "media_type": media_type, "data": lab_file['base64']}
-                })
-            user_content.append({"type": "text", "text": "[EXAMES LABORATORIAIS anexados acima]"})
+        # Supported formats for Claude Vision
+        SUPPORTED_IMG = {'image/jpeg', 'image/png', 'image/gif', 'image/webp'}
+        MAX_B64 = 8_000_000  # ~6MB file
         
-        # Add bioimpedance file if attached
-        bio_file = assessment.get('bio_file')
-        if bio_file and bio_file.get('base64') and bio_file.get('media_type'):
-            media_type = bio_file['media_type']
-            if media_type.startswith('image/'):
-                user_content.append({
-                    "type": "image",
-                    "source": {"type": "base64", "media_type": media_type, "data": bio_file['base64']}
-                })
-            elif media_type == 'application/pdf':
-                user_content.append({
-                    "type": "document",
-                    "source": {"type": "base64", "media_type": media_type, "data": bio_file['base64']}
-                })
-            user_content.append({"type": "text", "text": "[BIOIMPEDÂNCIA / COMPOSIÇÃO CORPORAL anexada acima]"})
+        def add_file_blocks(blocks, file_data, label):
+            if not file_data or not file_data.get('base64') or not file_data.get('media_type'):
+                return
+            mt = file_data['media_type']
+            b64 = file_data['base64']
+            if len(b64) > MAX_B64:
+                logger.warning(f"Skipping {label}: too large ({len(b64)} b64 chars)")
+                blocks.append({"type": "text", "text": f"[{label}: arquivo grande demais para anexar, use dados textuais do JSON]"})
+                return
+            if mt in SUPPORTED_IMG:
+                blocks.append({"type": "image", "source": {"type": "base64", "media_type": mt, "data": b64}})
+                blocks.append({"type": "text", "text": f"[{label} anexado acima]"})
+            elif mt == 'application/pdf':
+                blocks.append({"type": "document", "source": {"type": "base64", "media_type": mt, "data": b64}})
+                blocks.append({"type": "text", "text": f"[{label} anexado acima]"})
+            else:
+                logger.warning(f"Skipping {label}: unsupported type {mt}")
+                blocks.append({"type": "text", "text": f"[{label}: formato {mt} não suportado, use dados textuais do JSON]"})
         
-        # Final instruction text
-        has_attachments = bool(lab_file and lab_file.get('base64')) or bool(bio_file and bio_file.get('base64'))
+        file_blocks = []
+        add_file_blocks(file_blocks, assessment.get('lab_file'), 'EXAMES LABORATORIAIS')
+        add_file_blocks(file_blocks, assessment.get('bio_file'), 'BIOIMPEDÂNCIA')
+        
         instruction = "Gere meu plano nutricional completo com base nos dados informados."
-        if has_attachments:
-            instruction += " Considere os documentos/imagens anexados acima na sua análise."
-        user_content.append({"type": "text", "text": instruction})
+        if file_blocks:
+            instruction += " Considere os documentos/imagens anexados na sua análise."
         
-        message = anthropicClient.messages.create(
-            model="claude-opus-4-6",
-            max_tokens=16000,
-            temperature=0.4,
-            system=system_prompt,
-            messages=[{
-                "role": "user",
-                "content": user_content
-            }]
-        )
+        user_content = file_blocks + [{"type": "text", "text": instruction}]
+        
+        # Try with attachments, fallback to text-only if files fail
+        try:
+            message = anthropicClient.messages.create(
+                model="claude-opus-4-6",
+                max_tokens=16000,
+                temperature=0.4,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_content}]
+            )
+        except anthropic.BadRequestError as file_err:
+            logger.warning(f"Attachment error: {file_err}. Retrying text-only...")
+            fallback_text = instruction + " (Os arquivos de exames/bioimpedância não puderam ser processados visualmente. Baseie-se nos dados textuais incluídos no JSON do paciente.)"
+            message = anthropicClient.messages.create(
+                model="claude-opus-4-6",
+                max_tokens=16000,
+                temperature=0.4,
+                system=system_prompt,
+                messages=[{"role": "user", "content": fallback_text}]
+            )
         plan_markdown = message.content[0].text
         logger.info(f"Plan generated: {len(plan_markdown)} chars, {message.usage.output_tokens} tokens")
         
