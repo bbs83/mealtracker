@@ -15,19 +15,49 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pendingAssessment, setPendingAssessment] = useState(null);
+  const [regenerating, setRegenerating] = useState(false);
 
   useEffect(() => {
-    const fetchPlans = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axios.get(`${API}/plans`, { headers: getAuthHeaders() });
-        setPlans(res.data);
+        const [plansRes, assessRes] = await Promise.all([
+          axios.get(`${API}/plans`, { headers: getAuthHeaders() }),
+          axios.get(`${API}/assessments`, { headers: getAuthHeaders() }),
+        ]);
+        setPlans(plansRes.data);
+        
+        // Find assessments without plans (failed generation)
+        const planAssessmentIds = new Set(plansRes.data.map(p => p.assessment_id));
+        const unplanned = assessRes.data.find(a => !planAssessmentIds.has(a.id));
+        if (unplanned) setPendingAssessment(unplanned);
       } catch (err) {
-        console.error('Error fetching plans:', err);
+        console.error('Error fetching data:', err);
       }
       setLoading(false);
     };
-    fetchPlans();
+    fetchData();
   }, [API, getAuthHeaders]);
+
+  const handleRegenerate = async () => {
+    if (!pendingAssessment || regenerating) return;
+    setRegenerating(true);
+    try {
+      const res = await axios.post(
+        `${API}/assessments/${pendingAssessment.id}/generate-plan`, {},
+        { headers: getAuthHeaders(), timeout: 600000 }
+      );
+      if (res.data.status === 'ready') {
+        toast.success('Plano gerado com sucesso!');
+        navigate(`/app/plans/${res.data.id}`);
+      } else {
+        toast.error('Erro ao gerar plano. Tente novamente.');
+      }
+    } catch (err) {
+      toast.error('Erro na geração. Tente novamente.');
+    }
+    setRegenerating(false);
+  };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
