@@ -17,7 +17,6 @@ export default function DashboardPage() {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pendingAssessment, setPendingAssessment] = useState(null);
-  const [regenerating, setRegenerating] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
