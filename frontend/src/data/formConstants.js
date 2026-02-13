@@ -120,6 +120,7 @@ export const REVIEW_SECTIONS = [
 export const FIELD_LABELS = {
   name: 'Nome', age: 'Idade', sex: 'Sexo', weight: 'Peso (kg)', height: 'Altura (cm)',
   waist: 'Cintura (cm)', hip: 'Quadril (cm)', weight_history: 'Histórico de peso',
+  bio_file_name: 'Bioimpedância (arquivo)', bio_results: 'Dados de bioimpedância',
   primary_goal: 'Objetivo principal', target_weight: 'Peso desejado (kg)',
   clinical_goal_detail: 'Condição clínica', goal_notes: 'Notas sobre objetivo',
   conditions: 'Condições de saúde', other_conditions: 'Outras condições',
