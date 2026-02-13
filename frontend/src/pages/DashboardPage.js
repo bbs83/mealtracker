@@ -139,14 +139,10 @@ export default function DashboardPage() {
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold mb-1" style={{ fontFamily: "'Fraunces', serif" }}>Questionário pendente</h3>
-                <p className="text-sm text-muted-foreground">Você tem um questionário preenchido aguardando geração do plano. Clique para gerar agora (pode levar até 8 minutos).</p>
+                <p className="text-sm text-muted-foreground">Você tem um questionário preenchido aguardando geração do plano. Revise os dados ou envie novos exames antes de gerar.</p>
               </div>
-              <Button onClick={handleRegenerate} disabled={regenerating} data-testid="dashboard-regenerate-button">
-                {regenerating ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando...</>
-                ) : (
-                  <><RefreshCw className="w-4 h-4 mr-2" /> Gerar plano</>
-                )}
+              <Button onClick={() => navigate('/app/new')} data-testid="dashboard-regenerate-button">
+                <RefreshCw className="w-4 h-4 mr-2" /> Revisar e gerar
               </Button>
             </CardContent>
           </Card>
