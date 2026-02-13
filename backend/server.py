@@ -303,6 +303,7 @@ async def create_assessment(data: AssessmentCreate, request: Request):
         "user_id": payload['user_id'],
         "patient_data": data.patient_data,
         "lab_file": data.lab_file.model_dump() if data.lab_file else None,
+        "bio_file": data.bio_file.model_dump() if data.bio_file else None,
         "created_at": datetime.now(timezone.utc),
         "status": "completed"
     }
