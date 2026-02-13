@@ -42,6 +42,11 @@ export default function StepHealth({ data, update }) {
       toast.error('Arquivo muito grande. Máximo 10MB.');
       return;
     }
+    const name = file.name.toLowerCase();
+    if (name.endsWith('.heic') || name.endsWith('.heif')) {
+      toast.error('Formato HEIC não suportado. Por favor, converta para JPG ou PNG antes de enviar.');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       const base64 = reader.result.split(',')[1];
