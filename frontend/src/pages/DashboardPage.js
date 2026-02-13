@@ -88,10 +88,10 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5 mb-8">
           <Card className="md:col-span-7 rounded-2xl border border-border bg-card hover:shadow-lg transition-shadow duration-200" data-testid="dashboard-new-assessment-card">
             <CardContent className="p-6 sm:p-8">
-              <h3 className="text-xl font-semibold mb-2" style={{ fontFamily: "'Fraunces', serif" }}>Criar novo plano</h3>
-              <p className="text-sm text-muted-foreground mb-6 leading-6">Preencha o questionário de anamnese nutricional e receba um plano alimentar personalizado de 7 dias. Leva cerca de 8-10 minutos.</p>
+              <h3 className="text-xl font-semibold mb-2" style={{ fontFamily: "'Fraunces', serif" }}>Criar ou atualizar plano</h3>
+              <p className="text-sm text-muted-foreground mb-6 leading-6">Preencha o questionário nutricional ou continue de onde parou. Seus dados anteriores são salvos automaticamente.</p>
               <Button size="lg" className="h-11" onClick={() => navigate('/app/new')} data-testid="dashboard-new-assessment-button">
-                <Plus className="w-4 h-4 mr-2" /> Novo questionário
+                <Plus className="w-4 h-4 mr-2" /> Abrir questionário
               </Button>
             </CardContent>
           </Card>
