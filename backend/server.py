@@ -124,7 +124,7 @@ Antes dos cálculos energéticos, faça uma análise completa da composição co
   - Para outros objetivos, ajuste conforme indicado clinicamente
 - Apresente os cálculos numa tabela resumo clara.
 
-### 1.2 Distribuição de Macronutrientes
+### 1.3 Distribuição de Macronutrientes
 Defina a distribuição de macros (proteínas, carboidratos, gorduras) em gramas e percentual, justificando a escolha com base no objetivo, nível de atividade e condições clínicas do paciente. Apresente numa tabela.
 
 Diretrizes gerais (ajuste conforme contexto clínico):
