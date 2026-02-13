@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Upload, X, FileText } from 'lucide-react';
+import { toast } from 'sonner';
 
 const SectionTitle = ({ title, subtitle }) => (
   <div className="mb-5">
@@ -11,6 +15,34 @@ const SectionTitle = ({ title, subtitle }) => (
 );
 
 export default function StepPersonal({ data, update }) {
+  const bioFileRef = useRef(null);
+
+  const handleBioFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Arquivo muito grande. Máximo 10MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result.split(',')[1];
+      const mediaType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+      update('bio_file_base64', base64);
+      update('bio_file_media_type', mediaType);
+      update('bio_file_name', file.name);
+      toast.success(`Arquivo "${file.name}" anexado com sucesso!`);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeBioFile = () => {
+    update('bio_file_base64', null);
+    update('bio_file_media_type', null);
+    update('bio_file_name', null);
+    if (bioFileRef.current) bioFileRef.current.value = '';
+  };
+
   return (
     <div className="space-y-6">
       <SectionTitle title="Sobre você" subtitle="Informações básicas para calcular suas necessidades nutricionais" />
@@ -80,6 +112,41 @@ export default function StepPersonal({ data, update }) {
         <label className="text-sm font-medium mb-1.5 block">Histórico de peso</label>
         <p className="text-xs text-muted-foreground mb-1.5">Seu peso mudou bastante nos últimos anos? Já fez dietas antes?</p>
         <Textarea placeholder="Ex: Engordei 10kg nos últimos 2 anos. Já fiz low carb por 3 meses..." value={data.weight_history || ''} onChange={e => update('weight_history', e.target.value)} rows={3} data-testid="form-weight-history-input" />
+      </div>
+
+      {/* Bioimpedance section */}
+      <Separator />
+      
+      <div>
+        <h3 className="text-base font-semibold mb-1" style={{ fontFamily: "'Fraunces', serif" }}>Bioimpedância / Composição corporal</h3>
+        <p className="text-xs text-muted-foreground mb-4">Se você fez teste de bioimpedância ou DEXA recentemente, anexe o resultado ou preencha os dados abaixo. Isso ajuda muito na personalização do plano.</p>
+
+        <input ref={bioFileRef} type="file" accept="image/*,.pdf" onChange={handleBioFileUpload} className="hidden" data-testid="form-bio-file-input" />
+
+        {data.bio_file_name ? (
+          <div className="flex items-center gap-3 p-3 rounded-xl border border-primary/30 bg-primary/5 mb-3" data-testid="form-bio-file-attached">
+            <FileText className="w-5 h-5 text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{data.bio_file_name}</p>
+              <p className="text-xs text-muted-foreground">Arquivo anexado</p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={removeBioFile} className="shrink-0" data-testid="form-bio-file-remove">
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        ) : (
+          <Button type="button" variant="secondary" className="mb-3" onClick={() => bioFileRef.current?.click()} data-testid="form-bio-file-upload-button">
+            <Upload className="w-4 h-4 mr-2" /> Anexar bioimpedância (foto ou PDF)
+          </Button>
+        )}
+
+        <Textarea 
+          placeholder="Ou preencha manualmente os dados: % de gordura corporal, massa magra (kg), massa gorda (kg), água corporal (%), taxa metabólica basal do aparelho, gordura visceral..." 
+          value={data.bio_results || ''} 
+          onChange={e => update('bio_results', e.target.value)} 
+          rows={3} 
+          data-testid="form-bio-results-input" 
+        />
       </div>
     </div>
   );
