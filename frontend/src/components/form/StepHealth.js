@@ -107,11 +107,18 @@ export default function StepHealth({ data, update }) {
             <FileText className="w-5 h-5 text-primary shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{data.lab_file_name}</p>
-              <p className="text-xs text-muted-foreground">Arquivo anexado</p>
+              <p className="text-xs text-muted-foreground">
+                {data.lab_file_base64 ? 'Arquivo anexado nesta sessão' : 'Arquivo do questionário anterior (será reutilizado)'}
+              </p>
             </div>
-            <Button variant="ghost" size="sm" onClick={removeFile} className="shrink-0" data-testid="form-lab-file-remove">
-              <X className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center gap-1 shrink-0">
+              <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} className="text-xs">
+                Trocar
+              </Button>
+              <Button variant="ghost" size="sm" onClick={removeFile} data-testid="form-lab-file-remove">
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         ) : (
           <Button type="button" variant="secondary" className="mb-3" onClick={() => fileInputRef.current?.click()} data-testid="form-lab-file-upload-button">
