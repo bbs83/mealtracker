@@ -354,6 +354,12 @@ import base64 as b64module
 import io
 from pymongo import MongoClient as SyncMongoClient
 from PIL import Image
+try:
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+    logger.info("HEIF/HEIC support registered")
+except ImportError:
+    logger.warning("pillow-heif not installed, HEIC images won't be supported")
 
 # Sync MongoDB client for background threads
 sync_client = SyncMongoClient(mongo_url)
