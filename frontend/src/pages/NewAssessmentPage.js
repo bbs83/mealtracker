@@ -95,7 +95,7 @@ export default function NewAssessmentPage() {
       // Clean data before sending
       const cleanedData = cleanFormData(data);
 
-      // Prepare lab file info for backend
+      // Prepare file attachments for backend
       const payload = {
         patient_data: cleanedData,
       };
@@ -104,6 +104,13 @@ export default function NewAssessmentPage() {
           base64: data.lab_file_base64,
           media_type: data.lab_file_media_type,
           name: data.lab_file_name || 'exames',
+        };
+      }
+      if (data.bio_file_base64 && data.bio_file_media_type) {
+        payload.bio_file = {
+          base64: data.bio_file_base64,
+          media_type: data.bio_file_media_type,
+          name: data.bio_file_name || 'bioimpedancia',
         };
       }
 
