@@ -110,7 +110,7 @@ export default function StepHealth({ data, update }) {
         <label className="text-sm font-medium mb-1.5 block">Exames recentes</label>
         <p className="text-xs text-muted-foreground mb-3">Anexe uma foto ou PDF dos seus exames, ou descreva os valores manualmente abaixo.</p>
         
-        <input ref={fileInputRef} type="file" accept="image/*,.pdf" onChange={handleFileUpload} className="hidden" data-testid="form-lab-file-input" />
+        <input ref={fileInputRef} type="file" accept="image/*,.pdf,.heic,.heif" onChange={handleFileUpload} className="hidden" data-testid="form-lab-file-input" />
 
         {data.lab_file_name ? (
           <div className="flex items-center gap-3 p-3 rounded-xl border border-primary/30 bg-primary/5 mb-3" data-testid="form-lab-file-attached">
