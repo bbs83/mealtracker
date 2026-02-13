@@ -130,6 +130,28 @@ export default function DashboardPage() {
           </Card>
         </div>
 
+        {/* Regenerate pending assessment */}
+        {pendingAssessment && (
+          <Card className="rounded-2xl border-2 border-yellow-300 bg-yellow-50/50 mb-8" data-testid="dashboard-regenerate-card">
+            <CardContent className="p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center shrink-0">
+                <RefreshCw className="w-6 h-6 text-yellow-700" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-1" style={{ fontFamily: "'Fraunces', serif" }}>Questionário pendente</h3>
+                <p className="text-sm text-muted-foreground">Você tem um questionário preenchido aguardando geração do plano. Clique para gerar agora (pode levar até 8 minutos).</p>
+              </div>
+              <Button onClick={handleRegenerate} disabled={regenerating} data-testid="dashboard-regenerate-button">
+                {regenerating ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando...</>
+                ) : (
+                  <><RefreshCw className="w-4 h-4 mr-2" /> Gerar plano</>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Tracker CTA */}
         <Card className="rounded-2xl border border-border bg-card mb-8 hover:shadow-lg transition-shadow duration-200" data-testid="dashboard-tracker-card">
           <CardContent className="p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
