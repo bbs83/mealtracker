@@ -25,6 +25,7 @@ const cleanFormData = (data) => {
   for (const [key, value] of Object.entries(data)) {
     // Skip internal file data (sent separately)
     if (key === 'lab_file_base64' || key === 'lab_file_media_type') continue;
+    if (key === 'bio_file_base64' || key === 'bio_file_media_type') continue;
     
     // Skip empty values
     if (value === '' || value === null || value === undefined) continue;
