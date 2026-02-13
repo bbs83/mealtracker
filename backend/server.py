@@ -132,7 +132,7 @@ Diretrizes gerais (ajuste conforme contexto clínico):
 - **Gordura**: 0,8-1,2g/kg (nunca abaixo de 0,5g/kg)
 - **Carboidrato**: restante das calorias após proteína e gordura
 
-### 1.3 Análise Clínica
+### 1.4 Análise Clínica
 - Identifique **alertas nutricionais** relevantes.
 - Liste **restrições obrigatórias**.
 - Considere interações medicamento-nutriente relevantes.
