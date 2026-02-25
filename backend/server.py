@@ -885,42 +885,6 @@ async def create_meal_log(data: MealLogCreate, request: Request):
                 raw = raw[:-3]
         analysis = json.loads(raw)
         
-        # Add feedback based on plan targets
-        if targets:
-            totals = analysis.get('totals', {})
-            # Calculate how many meals in the day, estimate per-meal targets
-            meals_count = len(targets.get('meals', ['meal_breakfast', 'meal_lunch', 'meal_dinner'])) if isinstance(targets, dict) else 3
-            if meals_count == 0:
-                meals_count = 3
-            per_meal_kcal = targets.get('kcal', 1800) / meals_count
-            per_meal_prot = targets.get('protein_g', 100) / meals_count
-            
-            kcal_diff = totals.get('kcal', 0) - per_meal_kcal
-            prot_diff = totals.get('protein_g', 0) - per_meal_prot
-            
-            feedback_parts = []
-            if abs(kcal_diff) > 50:
-                if kcal_diff > 0:
-                    feedback_parts.append(f"+{int(kcal_diff)} kcal acima da meta para esta refeição")
-                else:
-                    feedback_parts.append(f"{int(kcal_diff)} kcal abaixo da meta para esta refeição")
-            if abs(prot_diff) > 5:
-                if prot_diff > 0:
-                    feedback_parts.append(f"+{int(prot_diff)}g de proteína acima")
-                else:
-                    feedback_parts.append(f"{int(prot_diff)}g de proteína abaixo")
-            
-            analysis['feedback'] = ". ".join(feedback_parts) if feedback_parts else "Refeição alinhada com o plano!"
-            
-            suggestions = []
-            if prot_diff < -10:
-                suggestions.append("Considere adicionar uma fonte de proteína (ovo, frango, iogurte) nas próximas refeições.")
-            if kcal_diff > 100:
-                suggestions.append("Refeição calórica acima da meta. Compense com refeições mais leves no restante do dia.")
-            if kcal_diff < -100:
-                suggestions.append("Refeição leve. Se sentir fome, faça um lanche saudável entre refeições.")
-            analysis['suggestions'] = " ".join(suggestions) if suggestions else ""
-        
         status = "analyzed"
     except Exception as e:
         logger.error(f"Meal analysis failed: {e}")
