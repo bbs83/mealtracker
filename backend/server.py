@@ -1032,44 +1032,21 @@ async def add_item_to_meal(log_id: str, data: AddItemRequest, request: Request):
     
     # Merge: append new foods to existing, recalculate totals
     existing_analysis = log.get('ai_analysis', {})
-    existing_foods = existing_analysis.get('foods', [])
-    new_foods = new_analysis.get('foods', [])
-    all_foods = existing_foods + new_foods
+    all_foods, new_totals = _merge_foods(existing_analysis.get('foods', []), new_analysis.get('foods', []))
     
-    # Recalculate totals
-    totals = {"kcal": 0, "protein_g": 0, "carbs_g": 0, "fat_g": 0, "fiber_g": 0}
-    for f in all_foods:
-        totals["kcal"] += f.get("kcal", 0)
-        totals["protein_g"] += f.get("protein_g", 0)
-        totals["carbs_g"] += f.get("carbs_g", 0)
-        totals["fat_g"] += f.get("fat_g", 0)
-        totals["fiber_g"] += f.get("fiber_g", 0)
-    
-    # Update feedback with plan targets
+    # Get targets for feedback
     plan = await db.plans.find_one({"user_id": payload['user_id'], "status": "ready"}, sort=[("created_at", -1)])
-    feedback = ""
-    suggestions = ""
+    targets = None
     if plan:
-        plan_id = str(plan['_id'])
-        targets_doc = await db.plan_targets.find_one({"plan_id": plan_id})
+        targets_doc = await db.plan_targets.find_one({"plan_id": str(plan['_id'])})
         if targets_doc:
-            tgt = targets_doc.get('daily_targets', {})
-            meals_count = max(len(targets_doc.get('meals', [])), 3)
-            per_meal_kcal = tgt.get('kcal', 1800) / meals_count
-            per_meal_prot = tgt.get('protein_g', 100) / meals_count
-            kcal_diff = totals['kcal'] - per_meal_kcal
-            prot_diff = totals['protein_g'] - per_meal_prot
-            parts = []
-            if abs(kcal_diff) > 50:
-                parts.append(f"{'+' if kcal_diff > 0 else ''}{int(kcal_diff)} kcal {'acima' if kcal_diff > 0 else 'abaixo'} da meta")
-            if abs(prot_diff) > 5:
-                parts.append(f"{'+' if prot_diff > 0 else ''}{int(prot_diff)}g de proteína {'acima' if prot_diff > 0 else 'abaixo'}")
-            feedback = ". ".join(parts) if parts else "Refeição alinhada com o plano!"
+            targets = targets_doc.get('daily_targets', {})
+    feedback, suggestions = _compute_feedback(new_totals, targets)
     
     updated_analysis = {
         **existing_analysis,
         "foods": all_foods,
-        "totals": totals,
+        "totals": new_totals,
         "feedback": feedback,
         "suggestions": suggestions,
         "items_count": existing_analysis.get("items_count", 1) + 1,
