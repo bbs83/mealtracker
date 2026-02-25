@@ -746,11 +746,12 @@ async def parse_plan_targets(plan_id: str, request: Request):
 
 # ============ TRACKER: ACTIVE PLAN ============
 @api_router.get("/active-plan")
-async def get_active_plan(request: Request):
+async def get_active_plan(request: Request, include_markdown: bool = False):
     payload = await get_current_user(request)
+    projection = None if include_markdown else {"plan_markdown": 0}
     plan = await db.plans.find_one(
         {"user_id": payload['user_id'], "status": "ready"},
-        {"plan_markdown": 0},
+        projection,
         sort=[("created_at", -1)]
     )
     if not plan:
