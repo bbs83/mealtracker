@@ -489,6 +489,53 @@ export default function DayDetailPage() {
             <p className="text-sm text-muted-foreground/70">Registre o que você comeu para acompanhar sua alimentação.</p>
           </div>
         )}
+
+        {/* Add item to existing meal dialog */}
+        <Dialog open={addItemOpen} onOpenChange={setAddItemOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle style={{ fontFamily: "'Fraunces', serif" }}>Adicionar item à refeição</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground -mt-2">Envie uma foto ou descreva o item adicional (bebida, entrada, sobremesa, etc.)</p>
+            <div className="space-y-4">
+              <Tabs defaultValue="photo">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="photo"><Camera className="w-4 h-4 mr-1" /> Foto</TabsTrigger>
+                  <TabsTrigger value="text"><Type className="w-4 h-4 mr-1" /> Texto</TabsTrigger>
+                </TabsList>
+                <TabsContent value="photo" className="mt-3">
+                  <input ref={addItemFileRef} type="file" accept="image/*" capture="environment" onChange={handleAddItemPhoto} className="hidden" />
+                  <Button variant="secondary" className="w-full h-20 border-dashed border-2" onClick={() => addItemFileRef.current?.click()}>
+                    {addItemPhoto ? (
+                      <span className="text-primary font-medium">Foto selecionada ✔</span>
+                    ) : (
+                      <div className="text-center">
+                        <Camera className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Tirar foto ou escolher</span>
+                      </div>
+                    )}
+                  </Button>
+                </TabsContent>
+                <TabsContent value="text" className="mt-3">
+                  <Textarea
+                    placeholder="Ex: 1 copo de suco de laranja natural, 1 fatia de torta de limão..."
+                    value={addItemDesc}
+                    onChange={e => setAddItemDesc(e.target.value)}
+                    rows={3}
+                  />
+                </TabsContent>
+              </Tabs>
+
+              <Button className="w-full h-11" onClick={handleSubmitAddItem} disabled={addItemSubmitting}>
+                {addItemSubmitting ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Analisando...</>
+                ) : (
+                  <><Plus className="w-4 h-4 mr-2" /> Adicionar e analisar</>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
