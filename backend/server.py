@@ -798,6 +798,37 @@ MEAL_TYPE_LABELS = {
     "meal_supper": "Ceia",
 }
 
+def _compute_feedback(totals, targets_dict):
+    """Compute feedback comparing meal totals vs per-meal targets."""
+    if not targets_dict:
+        return "", ""
+    meals_count = max(len(targets_dict.get('meals', [])) if isinstance(targets_dict, dict) and 'meals' in targets_dict else 3, 3)
+    per_meal_kcal = targets_dict.get('kcal', 1800) / meals_count
+    per_meal_prot = targets_dict.get('protein_g', 100) / meals_count
+    kcal_diff = totals.get('kcal', 0) - per_meal_kcal
+    prot_diff = totals.get('protein_g', 0) - per_meal_prot
+    parts = []
+    if abs(kcal_diff) > 50:
+        parts.append(f"{'+' if kcal_diff > 0 else ''}{int(kcal_diff)} kcal {'acima' if kcal_diff > 0 else 'abaixo'} da meta para esta refeição")
+    if abs(prot_diff) > 5:
+        parts.append(f"{'+' if prot_diff > 0 else ''}{int(prot_diff)}g de proteína {'acima' if prot_diff > 0 else 'abaixo'}")
+    feedback = ". ".join(parts) if parts else "Refeição alinhada com o plano!"
+    suggestions = ""
+    if prot_diff < -10:
+        suggestions = "Considere adicionar uma fonte de proteína nas próximas refeições."
+    elif kcal_diff > 100:
+        suggestions = "Refeição calórica acima da meta. Compense com refeições mais leves."
+    return feedback, suggestions
+
+def _merge_foods(existing_foods, new_foods):
+    """Merge two food lists and recalculate totals."""
+    all_foods = (existing_foods or []) + (new_foods or [])
+    totals = {"kcal": 0, "protein_g": 0, "carbs_g": 0, "fat_g": 0, "fiber_g": 0}
+    for f in all_foods:
+        for k in totals:
+            totals[k] += f.get(k, 0)
+    return all_foods, totals
+
 @api_router.post("/meal-logs")
 async def create_meal_log(data: MealLogCreate, request: Request):
     payload = await get_current_user(request)
@@ -812,10 +843,12 @@ async def create_meal_log(data: MealLogCreate, request: Request):
     )
     plan_id = str(plan['_id']) if plan else None
     targets = None
+    targets_full = None
     if plan_id:
         targets_doc = await db.plan_targets.find_one({"plan_id": plan_id, "user_id": payload['user_id']})
         if targets_doc:
             targets = targets_doc.get('daily_targets', {})
+            targets_full = targets_doc
     
     # Analyze meal with Sonnet
     try:
