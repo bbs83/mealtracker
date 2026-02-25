@@ -128,6 +128,15 @@ export default function DayDetailPage() {
   const [logPhotoType, setLogPhotoType] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const fileRef = useRef(null);
+  
+  // Add-item state
+  const [addItemLogId, setAddItemLogId] = useState(null);
+  const [addItemOpen, setAddItemOpen] = useState(false);
+  const [addItemDesc, setAddItemDesc] = useState('');
+  const [addItemPhoto, setAddItemPhoto] = useState(null);
+  const [addItemPhotoType, setAddItemPhotoType] = useState(null);
+  const [addItemSubmitting, setAddItemSubmitting] = useState(false);
+  const addItemFileRef = useRef(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
