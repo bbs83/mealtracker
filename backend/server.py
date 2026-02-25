@@ -934,6 +934,122 @@ async def delete_meal_log(log_id: str, request: Request):
         raise HTTPException(status_code=404, detail="Registro não encontrado")
     return {"deleted": True}
 
+class AddItemRequest(BaseModel):
+    photo_base64: Optional[str] = None
+    photo_media_type: Optional[str] = None
+    description: Optional[str] = None
+
+@api_router.post("/meal-logs/{log_id}/add-item")
+async def add_item_to_meal(log_id: str, data: AddItemRequest, request: Request):
+    """Add another photo/text item to an existing meal log. Analyzes and appends foods, recalculates totals."""
+    payload = await get_current_user(request)
+    from bson import ObjectId
+    
+    log = await db.meal_logs.find_one({"_id": ObjectId(log_id), "user_id": payload['user_id']})
+    if not log:
+        raise HTTPException(status_code=404, detail="Registro não encontrado")
+    
+    if not data.photo_base64 and not data.description:
+        raise HTTPException(status_code=400, detail="Envie uma foto ou descrição")
+    
+    # Analyze the new item
+    try:
+        user_content = []
+        if data.photo_base64 and data.photo_media_type:
+            user_content.append({
+                "type": "image",
+                "source": {"type": "base64", "media_type": data.photo_media_type, "data": data.photo_base64}
+            })
+        
+        text_prompt = MEAL_ANALYSIS_PROMPT
+        if data.description:
+            text_prompt += f"\n\nDescrição: {data.description}"
+        if not data.photo_base64:
+            text_prompt += "\n\nNão há foto. Analise baseado apenas na descrição textual."
+        text_prompt += f"\n\nTipo de refeição: item adicional"
+        user_content.append({"type": "text", "text": text_prompt})
+        
+        msg = anthropicClient.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=2000,
+            temperature=0.2,
+            messages=[{"role": "user", "content": user_content}]
+        )
+        raw = msg.content[0].text.strip()
+        if raw.startswith('```'):
+            raw = raw.split('\n', 1)[1] if '\n' in raw else raw[3:]
+            if raw.endswith('```'):
+                raw = raw[:-3]
+        new_analysis = json.loads(raw)
+    except Exception as e:
+        logger.error(f"Add-item analysis failed: {e}")
+        raise HTTPException(status_code=500, detail="Falha ao analisar o item. Tente novamente.")
+    
+    # Merge: append new foods to existing, recalculate totals
+    existing_analysis = log.get('ai_analysis', {})
+    existing_foods = existing_analysis.get('foods', [])
+    new_foods = new_analysis.get('foods', [])
+    all_foods = existing_foods + new_foods
+    
+    # Recalculate totals
+    totals = {"kcal": 0, "protein_g": 0, "carbs_g": 0, "fat_g": 0, "fiber_g": 0}
+    for f in all_foods:
+        totals["kcal"] += f.get("kcal", 0)
+        totals["protein_g"] += f.get("protein_g", 0)
+        totals["carbs_g"] += f.get("carbs_g", 0)
+        totals["fat_g"] += f.get("fat_g", 0)
+        totals["fiber_g"] += f.get("fiber_g", 0)
+    
+    # Update feedback with plan targets
+    plan = await db.plans.find_one({"user_id": payload['user_id'], "status": "ready"}, sort=[("created_at", -1)])
+    feedback = ""
+    suggestions = ""
+    if plan:
+        plan_id = str(plan['_id'])
+        targets_doc = await db.plan_targets.find_one({"plan_id": plan_id})
+        if targets_doc:
+            tgt = targets_doc.get('daily_targets', {})
+            meals_count = max(len(targets_doc.get('meals', [])), 3)
+            per_meal_kcal = tgt.get('kcal', 1800) / meals_count
+            per_meal_prot = tgt.get('protein_g', 100) / meals_count
+            kcal_diff = totals['kcal'] - per_meal_kcal
+            prot_diff = totals['protein_g'] - per_meal_prot
+            parts = []
+            if abs(kcal_diff) > 50:
+                parts.append(f"{'+' if kcal_diff > 0 else ''}{int(kcal_diff)} kcal {'acima' if kcal_diff > 0 else 'abaixo'} da meta")
+            if abs(prot_diff) > 5:
+                parts.append(f"{'+' if prot_diff > 0 else ''}{int(prot_diff)}g de proteína {'acima' if prot_diff > 0 else 'abaixo'}")
+            feedback = ". ".join(parts) if parts else "Refeição alinhada com o plano!"
+    
+    updated_analysis = {
+        **existing_analysis,
+        "foods": all_foods,
+        "totals": totals,
+        "feedback": feedback,
+        "suggestions": suggestions,
+        "items_count": existing_analysis.get("items_count", 1) + 1,
+    }
+    
+    # Build description list
+    descriptions = []
+    if log.get('description'):
+        descriptions.append(log['description'])
+    if data.description:
+        descriptions.append(data.description)
+    combined_desc = " | ".join(descriptions) if descriptions else log.get('description')
+    
+    await db.meal_logs.update_one(
+        {"_id": ObjectId(log_id)},
+        {"$set": {
+            "ai_analysis": updated_analysis,
+            "description": combined_desc,
+            "has_photo": log.get('has_photo', False) or bool(data.photo_base64),
+        }}
+    )
+    
+    updated_log = await db.meal_logs.find_one({"_id": ObjectId(log_id)})
+    return serialize_doc(updated_log)
+
 @api_router.get("/meal-logs/calendar")
 async def get_meal_calendar(request: Request, year: int = None, month: int = None):
     payload = await get_current_user(request)
