@@ -934,6 +934,54 @@ async def create_meal_log(data: MealLogCreate, request: Request):
         }
         status = "error"
     
+    # Check if there's already a log for this meal_type + date → merge
+    existing_log = await db.meal_logs.find_one({
+        "user_id": payload['user_id'],
+        "date": data.date,
+        "meal_type": data.meal_type
+    })
+    
+    if existing_log and status == "analyzed":
+        # Merge foods and recalculate totals
+        existing_analysis = existing_log.get('ai_analysis', {})
+        all_foods, new_totals = _merge_foods(existing_analysis.get('foods', []), analysis.get('foods', []))
+        feedback, suggestions = _compute_feedback(new_totals, targets)
+        
+        merged_analysis = {
+            **existing_analysis,
+            "foods": all_foods,
+            "totals": new_totals,
+            "feedback": feedback,
+            "suggestions": suggestions,
+            "items_count": existing_analysis.get("items_count", 1) + 1,
+        }
+        
+        descriptions = []
+        if existing_log.get('description'):
+            descriptions.append(existing_log['description'])
+        if data.description:
+            descriptions.append(data.description)
+        combined_desc = " | ".join(descriptions) if descriptions else existing_log.get('description')
+        
+        await db.meal_logs.update_one(
+            {"_id": existing_log['_id']},
+            {"$set": {
+                "ai_analysis": merged_analysis,
+                "description": combined_desc,
+                "has_photo": existing_log.get('has_photo', False) or bool(data.photo_base64),
+                "status": "analyzed",
+            }}
+        )
+        updated = await db.meal_logs.find_one({"_id": existing_log['_id']})
+        return serialize_doc(updated)
+    
+    # No existing log — create new
+    # Add feedback to analysis
+    if status == "analyzed" and targets:
+        feedback, suggestions = _compute_feedback(analysis.get('totals', {}), targets)
+        analysis['feedback'] = feedback
+        analysis['suggestions'] = suggestions
+    
     log_doc = {
         "user_id": payload['user_id'],
         "plan_id": plan_id,
