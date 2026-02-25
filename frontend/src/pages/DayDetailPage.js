@@ -29,7 +29,7 @@ const MEAL_TYPE_LABELS = {
 
 const WEEKDAY_NAMES_PT = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
-// Extract a specific day's meal plan section from the full plan markdown
+// Extract a specific day's meal plan section from ETAPA 2 of the plan markdown
 function extractDayPlan(markdown, date) {
   if (!markdown || !date) return null;
   
@@ -37,21 +37,32 @@ function extractDayPlan(markdown, date) {
   const dayIndex = d.getDay(); // 0=Sun, 1=Mon, ...
   const dayName = WEEKDAY_NAMES_PT[dayIndex];
   
-  // Common patterns in the plan: "### Segunda-feira", "## Segunda", "**Segunda-feira**", "Segunda-feira" as heading
-  const patterns = [
-    dayName + '-feira',
-    dayName,
-  ];
-  
   const lines = markdown.split('\n');
-  let startIdx = -1;
-  let endIdx = lines.length;
   
-  // Find the start of this day's section
+  // First: find where ETAPA 2 (Plano Alimentar) starts
+  let etapa2Start = -1;
+  let etapa3Start = lines.length;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].toLowerCase();
-    const match = patterns.some(p => line.includes(p.toLowerCase()));
-    if (match && (line.startsWith('#') || line.startsWith('**') || line.includes('dia '))) {
+    if (line.includes('etapa 2') || (line.includes('plano alimentar') && line.startsWith('#'))) {
+      etapa2Start = i;
+    }
+    if (etapa2Start > -1 && i > etapa2Start && (line.includes('etapa 3') || (line.includes('substituiç') && line.startsWith('#')))) {
+      etapa3Start = i;
+      break;
+    }
+  }
+  
+  if (etapa2Start === -1) return null;
+  
+  // Search for the day ONLY within ETAPA 2
+  const patterns = [dayName.toLowerCase() + '-feira', dayName.toLowerCase()];
+  let startIdx = -1;
+  
+  for (let i = etapa2Start; i < etapa3Start; i++) {
+    const line = lines[i].toLowerCase();
+    const match = patterns.some(p => line.includes(p));
+    if (match && (line.startsWith('#') || line.includes('📅') || (line.startsWith('**') && line.endsWith('**')))) {
       startIdx = i;
       break;
     }
@@ -59,19 +70,17 @@ function extractDayPlan(markdown, date) {
   
   if (startIdx === -1) return null;
   
-  // Find the end: next day header or next ETAPA/section
+  // Find the end: next day header or end of ETAPA 2
   const nextDays = WEEKDAY_NAMES_PT.filter(n => n !== dayName).map(n => n.toLowerCase());
-  for (let i = startIdx + 1; i < lines.length; i++) {
+  let endIdx = etapa3Start;
+  
+  for (let i = startIdx + 1; i < etapa3Start; i++) {
     const line = lines[i].toLowerCase();
-    // Stop at next day header
     const isNextDay = nextDays.some(nd => {
       return (line.includes(nd) || line.includes(nd + '-feira')) && 
-             (line.startsWith('#') || line.startsWith('**') || line.includes('dia '));
+             (line.startsWith('#') || line.includes('📅') || (line.startsWith('**') && line.endsWith('**')));
     });
-    // Stop at next ETAPA
-    const isNextSection = line.startsWith('## etapa') || line.startsWith('## ') && line.includes('substituiç');
-    
-    if (isNextDay || isNextSection) {
+    if (isNextDay) {
       endIdx = i;
       break;
     }
