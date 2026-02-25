@@ -223,6 +223,49 @@ export default function DayDetailPage() {
     }
   };
 
+  // Add item to existing meal
+  const openAddItem = (logId) => {
+    setAddItemLogId(logId);
+    setAddItemDesc('');
+    setAddItemPhoto(null);
+    setAddItemPhotoType(null);
+    setAddItemOpen(true);
+  };
+
+  const handleAddItemPhoto = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { toast.error('Arquivo muito grande. Máximo 10MB.'); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAddItemPhoto(reader.result.split(',')[1]);
+      setAddItemPhotoType(file.type || 'image/jpeg');
+      toast.success('Foto selecionada!');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSubmitAddItem = async () => {
+    if (!addItemPhoto && !addItemDesc.trim()) {
+      toast.error('Envie uma foto ou descrição');
+      return;
+    }
+    setAddItemSubmitting(true);
+    try {
+      await axios.post(`${API}/meal-logs/${addItemLogId}/add-item`, {
+        description: addItemDesc || null,
+        photo_base64: addItemPhoto || null,
+        photo_media_type: addItemPhotoType || null,
+      }, { headers: getAuthHeaders(), timeout: 60000 });
+      toast.success('Item adicionado à refeição!');
+      setAddItemOpen(false);
+      fetchData();
+    } catch (err) {
+      toast.error('Erro ao adicionar item. Tente novamente.');
+    }
+    setAddItemSubmitting(false);
+  };
+
   const formatDate = (d) => {
     const dt = new Date(d + 'T12:00:00');
     return dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
