@@ -478,7 +478,7 @@ def _generate_plan_background(plan_id_str: str, assessment_data: dict):
         try:
             logger.info(f"[BG] Attempting with {len(file_blocks)} file blocks...")
             message = anthropicClient.messages.create(
-                model="claude-opus-4-6", max_tokens=16000, temperature=0.4,
+                model="claude-sonnet-4-6", max_tokens=16000, temperature=0.4,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_content}]
             )
@@ -491,21 +491,21 @@ def _generate_plan_background(plan_id_str: str, assessment_data: dict):
                     logger.info(f"[BG] Retrying with PDFs only ({len(pdf_blocks)} blocks)...")
                     retry_content = pdf_blocks + [{"type": "text", "text": instruction + " (Nota: apenas o PDF foi anexado; a imagem não pôde ser processada.)"}]
                     message = anthropicClient.messages.create(
-                        model="claude-opus-4-6", max_tokens=16000, temperature=0.4,
+                        model="claude-sonnet-4-6", max_tokens=16000, temperature=0.4,
                         system=system_prompt,
                         messages=[{"role": "user", "content": retry_content}]
                     )
                 except anthropic.BadRequestError:
                     logger.warning(f"[BG] PDF-only also failed. Falling back to text-only.")
                     message = anthropicClient.messages.create(
-                        model="claude-opus-4-6", max_tokens=16000, temperature=0.4,
+                        model="claude-sonnet-4-6", max_tokens=16000, temperature=0.4,
                         system=system_prompt,
                         messages=[{"role": "user", "content": instruction + " (Os arquivos não puderam ser processados. Use dados textuais do JSON.)"}]
                     )
             else:
                 logger.warning(f"[BG] No PDFs to retry. Falling back to text-only.")
                 message = anthropicClient.messages.create(
-                    model="claude-opus-4-6", max_tokens=16000, temperature=0.4,
+                    model="claude-sonnet-4-6", max_tokens=16000, temperature=0.4,
                     system=system_prompt,
                     messages=[{"role": "user", "content": instruction + " (Os arquivos não puderam ser processados. Use dados textuais do JSON.)"}]
                 )
@@ -563,7 +563,7 @@ async def generate_plan(assessment_id: str, request: Request):
         "user_id": payload['user_id'],
         "status": "generating",
         "plan_markdown": "",
-        "model": "claude-opus-4-6",
+        "model": "claude-sonnet-4-6",
         "created_at": datetime.now(timezone.utc),
         "completed_at": None
     }
