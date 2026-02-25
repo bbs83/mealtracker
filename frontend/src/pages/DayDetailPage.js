@@ -428,10 +428,15 @@ export default function DayDetailPage() {
               <Card key={log.id} className="rounded-xl" data-testid={`meal-log-${log.id}`}>
                 <CardHeader className="pb-2 flex flex-row items-center justify-between">
                   <div>
-                    <CardTitle className="text-sm font-semibold">{MEAL_TYPE_LABELS[log.meal_type] || log.meal_type}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-sm font-semibold">{MEAL_TYPE_LABELS[log.meal_type] || log.meal_type}</CardTitle>
+                      {log.ai_analysis?.items_count > 1 && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">{log.ai_analysis.items_count} itens</Badge>
+                      )}
+                    </div>
                     {log.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{log.description}</p>}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     {log.has_photo && <Badge variant="outline" className="text-xs">Foto</Badge>}
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDeleteLog(log.id)}>
                       <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
@@ -462,13 +467,17 @@ export default function DayDetailPage() {
                     </div>
                   )}
                   {log.ai_analysis?.feedback && (
-                    <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
+                    <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mb-3">
                       <p className="text-xs font-medium text-primary">{log.ai_analysis.feedback}</p>
                       {log.ai_analysis.suggestions && (
                         <p className="text-xs text-muted-foreground mt-1">{log.ai_analysis.suggestions}</p>
                       )}
                     </div>
                   )}
+                  {/* Add more items button */}
+                  <Button variant="outline" size="sm" className="w-full text-xs h-8" onClick={() => openAddItem(log.id)} data-testid={`add-item-${log.id}`}>
+                    <Plus className="w-3 h-3 mr-1" /> Adicionar mais itens (bebida, entrada, sobremesa...)
+                  </Button>
                 </CardContent>
               </Card>
             ))}
