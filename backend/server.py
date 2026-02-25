@@ -709,7 +709,7 @@ async def parse_plan_targets(plan_id: str, request: Request):
     try:
         # Use Sonnet for fast extraction
         msg = anthropicClient.messages.create(
-            model="claude-sonnet-4-5-20250929",
+            model="claude-sonnet-4-6",
             max_tokens=500,
             temperature=0,
             messages=[{"role": "user", "content": EXTRACT_TARGETS_PROMPT + plan['plan_markdown'][:8000]}]
@@ -838,7 +838,7 @@ async def create_meal_log(data: MealLogCreate, request: Request):
         user_content.append({"type": "text", "text": text_prompt})
         
         msg = anthropicClient.messages.create(
-            model="claude-sonnet-4-5-20250929",
+            model="claude-sonnet-4-6",
             max_tokens=2000,
             temperature=0.2,
             messages=[{"role": "user", "content": user_content}]
