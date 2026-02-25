@@ -5,16 +5,18 @@ import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Plus, Camera, Type, Loader2, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Plus, Camera, Type, Loader2, Trash2, ChevronLeft, ChevronRight, ChevronDown, UtensilsCrossed } from 'lucide-react';
 import { toast } from 'sonner';
 import { MEAL_DEFS } from '@/data/formConstants';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const MEAL_TYPE_LABELS = {
   meal_breakfast: 'Café da manhã',
@@ -25,7 +27,61 @@ const MEAL_TYPE_LABELS = {
   meal_supper: 'Ceia',
 };
 
-const MacroBar = ({ label, value, target, unit = 'g', color }) => {
+const WEEKDAY_NAMES_PT = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+// Extract a specific day's meal plan section from the full plan markdown
+function extractDayPlan(markdown, date) {
+  if (!markdown || !date) return null;
+  
+  const d = new Date(date + 'T12:00:00');
+  const dayIndex = d.getDay(); // 0=Sun, 1=Mon, ...
+  const dayName = WEEKDAY_NAMES_PT[dayIndex];
+  
+  // Common patterns in the plan: "### Segunda-feira", "## Segunda", "**Segunda-feira**", "Segunda-feira" as heading
+  const patterns = [
+    dayName + '-feira',
+    dayName,
+  ];
+  
+  const lines = markdown.split('\n');
+  let startIdx = -1;
+  let endIdx = lines.length;
+  
+  // Find the start of this day's section
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].toLowerCase();
+    const match = patterns.some(p => line.includes(p.toLowerCase()));
+    if (match && (line.startsWith('#') || line.startsWith('**') || line.includes('dia '))) {
+      startIdx = i;
+      break;
+    }
+  }
+  
+  if (startIdx === -1) return null;
+  
+  // Find the end: next day header or next ETAPA/section
+  const nextDays = WEEKDAY_NAMES_PT.filter(n => n !== dayName).map(n => n.toLowerCase());
+  for (let i = startIdx + 1; i < lines.length; i++) {
+    const line = lines[i].toLowerCase();
+    // Stop at next day header
+    const isNextDay = nextDays.some(nd => {
+      return (line.includes(nd) || line.includes(nd + '-feira')) && 
+             (line.startsWith('#') || line.startsWith('**') || line.includes('dia '));
+    });
+    // Stop at next ETAPA
+    const isNextSection = line.startsWith('## etapa') || line.startsWith('## ') && line.includes('substituiç');
+    
+    if (isNextDay || isNextSection) {
+      endIdx = i;
+      break;
+    }
+  }
+  
+  const section = lines.slice(startIdx, endIdx).join('\n').trim();
+  return section.length > 20 ? section : null;
+}
+
+const MacroBar = ({ label, value, target, unit = 'g' }) => {
   const pct = target > 0 ? Math.min((value / target) * 100, 150) : 0;
   const over = value > target * 1.15;
   const under = value < target * 0.85;
@@ -53,6 +109,8 @@ export default function DayDetailPage() {
   const navigate = useNavigate();
   const [logs, setLogs] = useState([]);
   const [targets, setTargets] = useState(null);
+  const [dayPlanMarkdown, setDayPlanMarkdown] = useState(null);
+  const [planOpen, setPlanOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [logMealType, setLogMealType] = useState('meal_lunch');
@@ -67,11 +125,16 @@ export default function DayDetailPage() {
     try {
       const [logsRes, planRes] = await Promise.all([
         axios.get(`${API}/meal-logs?date=${date}`, { headers: getAuthHeaders() }),
-        axios.get(`${API}/active-plan`, { headers: getAuthHeaders() }),
+        axios.get(`${API}/active-plan?include_markdown=true`, { headers: getAuthHeaders() }),
       ]);
       setLogs(logsRes.data);
       if (planRes.data.targets) {
         setTargets(planRes.data.targets.daily_targets);
+      }
+      // Extract day's plan from markdown
+      if (planRes.data.plan?.plan_markdown) {
+        const daySection = extractDayPlan(planRes.data.plan.plan_markdown, date);
+        setDayPlanMarkdown(daySection);
       }
     } catch (err) {
       console.error(err);
@@ -113,14 +176,13 @@ export default function DayDetailPage() {
     }
     setSubmitting(true);
     try {
-      const payload = {
+      await axios.post(`${API}/meal-logs`, {
         date,
         meal_type: logMealType,
         description: logDescription || null,
         photo_base64: logPhoto || null,
         photo_media_type: logPhotoType || null,
-      };
-      await axios.post(`${API}/meal-logs`, payload, { headers: getAuthHeaders(), timeout: 60000 });
+      }, { headers: getAuthHeaders(), timeout: 60000 });
       toast.success('Refeição registrada e analisada!');
       setDialogOpen(false);
       setLogDescription('');
@@ -174,6 +236,34 @@ export default function DayDetailPage() {
             <Button variant="ghost" size="icon" onClick={nextDay}><ChevronRight className="w-4 h-4" /></Button>
           </div>
         </div>
+
+        {/* Suggested meal plan for this day */}
+        {dayPlanMarkdown && (
+          <Collapsible open={planOpen} onOpenChange={setPlanOpen}>
+            <Card className="mb-6 rounded-xl border-primary/20 bg-primary/[0.02]" data-testid="day-plan-card">
+              <CollapsibleTrigger className="w-full">
+                <CardHeader className="pb-2 flex flex-row items-center justify-between cursor-pointer hover:bg-muted/30 rounded-t-xl transition-colors">
+                  <div className="flex items-center gap-2">
+                    <UtensilsCrossed className="w-4 h-4 text-primary" />
+                    <CardTitle className="text-sm font-semibold" style={{ fontFamily: "'Fraunces', serif" }}>
+                      Cardápio sugerido para hoje
+                    </CardTitle>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${planOpen ? 'rotate-180' : ''}`} />
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0 pb-4">
+                  <div className="plan-content text-sm">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {dayPlanMarkdown}
+                    </ReactMarkdown>
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+        )}
 
         {/* Daily macro summary */}
         {targets && (
@@ -245,7 +335,7 @@ export default function DayDetailPage() {
                 </TabsContent>
                 <TabsContent value="text" className="mt-3">
                   <Textarea
-                    placeholder="Descreva o que comeu com detalhes e quantidades...\nEx: 4 col. sopa de arroz, 1 concha de feijão, 150g de frango grelhado, salada"
+                    placeholder={"Descreva o que comeu com detalhes e quantidades...\nEx: 4 col. sopa de arroz, 1 concha de feijão, 150g de frango grelhado, salada"}
                     value={logDescription}
                     onChange={e => setLogDescription(e.target.value)}
                     rows={4}
@@ -272,6 +362,7 @@ export default function DayDetailPage() {
           </div>
         ) : logs.length > 0 ? (
           <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Refeições registradas</h3>
             {logs.map(log => (
               <Card key={log.id} className="rounded-xl" data-testid={`meal-log-${log.id}`}>
                 <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -299,7 +390,6 @@ export default function DayDetailPage() {
                       </div>
                     </div>
                   )}
-                  {/* Macro totals */}
                   {log.ai_analysis?.totals && (
                     <div className="grid grid-cols-4 gap-2 mb-3">
                       {[['kcal', 'kcal'], ['protein_g', 'P'], ['carbs_g', 'C'], ['fat_g', 'G']].map(([key, label]) => (
@@ -310,7 +400,6 @@ export default function DayDetailPage() {
                       ))}
                     </div>
                   )}
-                  {/* Feedback */}
                   {log.ai_analysis?.feedback && (
                     <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
                       <p className="text-xs font-medium text-primary">{log.ai_analysis.feedback}</p>
