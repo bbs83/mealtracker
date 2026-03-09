@@ -1,34 +1,30 @@
 [
   {
-    "content": "Phase 4.1: Backend - Plan target extraction endpoint + meal analysis with Sonnet",
+    "content": "Add Stripe keys to .env and install dependencies",
     "status": "completed"
   },
   {
-    "content": "Phase 4.2: Backend - Meal logs CRUD + calendar/weekly summary endpoints",
+    "content": "Backend: Payment endpoints (create checkout, webhook, status, user subscription check)",
     "status": "completed"
   },
   {
-    "content": "Phase 4.3: Frontend - Tracker page with monthly calendar view",
+    "content": "Backend: Access control - gate plan generation and tracker behind payment",
     "status": "completed"
   },
   {
-    "content": "Phase 4.4: Frontend - Daily view with plan vs actual comparison",
+    "content": "Frontend: Pricing section on landing page",
     "status": "completed"
   },
   {
-    "content": "Phase 4.5: Frontend - Meal log dialog (photo + text) with AI analysis",
+    "content": "Frontend: Payment gate on form submit + success/cancel flow",
     "status": "completed"
   },
   {
-    "content": "Phase 4.6: Frontend - Weekly summary with charts",
+    "content": "Frontend: Tracker access control (subscription only)",
     "status": "completed"
   },
   {
-    "content": "Phase 4.7: Navigation update - Add Tracker to dashboard/header",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 4.8: End to end testing of full tracker flow",
+    "content": "Test full payment flow end to end",
     "status": "completed"
   }
 ]

@@ -11,6 +11,7 @@ import NewAssessmentPage from '@/pages/NewAssessmentPage';
 import PlanViewerPage from '@/pages/PlanViewerPage';
 import TrackerPage from '@/pages/TrackerPage';
 import DayDetailPage from '@/pages/DayDetailPage';
+import PaymentSuccessPage from '@/pages/PaymentSuccessPage';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -40,6 +41,7 @@ function App() {
           <Route path="/app/plans/:planId" element={<ProtectedRoute><PlanViewerPage /></ProtectedRoute>} />
           <Route path="/app/tracker" element={<ProtectedRoute><TrackerPage /></ProtectedRoute>} />
           <Route path="/app/tracker/:date" element={<ProtectedRoute><DayDetailPage /></ProtectedRoute>} />
+          <Route path="/app/payment-success" element={<ProtectedRoute><PaymentSuccessPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

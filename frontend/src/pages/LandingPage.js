@@ -5,7 +5,7 @@ import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { ClipboardList, Sparkles, UtensilsCrossed, ArrowRight, Leaf, Heart, Scale, Apple } from 'lucide-react';
+import { ClipboardList, Sparkles, UtensilsCrossed, ArrowRight, Leaf, Heart, Scale, Apple, Check } from 'lucide-react';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -96,6 +96,43 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="py-16 sm:py-20" id="pricing">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-4" style={{ fontFamily: "'Fraunces', serif" }}>Planos e preços</h2>
+          <p className="text-muted-foreground text-center mb-12 max-w-xl mx-auto">Escolha o plano ideal para seus objetivos</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            <Card className="rounded-2xl border-2 border-border">
+              <CardContent className="p-6 sm:p-8 text-center">
+                <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: "'Fraunces', serif" }}>Plano Único</h3>
+                <div className="mb-4"><span className="text-4xl font-bold" style={{ fontFamily: "'Fraunces', serif" }}>R$ 49</span><span className="text-muted-foreground ml-1">/ plano</span></div>
+                <ul className="space-y-2 text-sm text-left mb-6">
+                  <li className="flex items-start gap-2"><Check className="w-4 h-4 text-primary mt-0.5 shrink-0" /> 1 plano nutricional completo de 7 dias</li>
+                  <li className="flex items-start gap-2"><Check className="w-4 h-4 text-primary mt-0.5 shrink-0" /> Tabela de substituições</li>
+                  <li className="flex items-start gap-2"><Check className="w-4 h-4 text-primary mt-0.5 shrink-0" /> Orientações personalizadas</li>
+                </ul>
+                <Button variant="secondary" className="w-full" onClick={() => navigate('/signup')}>Começar</Button>
+              </CardContent>
+            </Card>
+            <Card className="rounded-2xl border-2 border-primary relative overflow-hidden">
+              <div className="absolute top-0 right-0"><span className="bg-primary text-primary-foreground text-xs px-3 py-1 rounded-bl-lg font-medium">Recomendado</span></div>
+              <CardContent className="p-6 sm:p-8 text-center">
+                <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: "'Fraunces', serif" }}>Assinatura Mensal</h3>
+                <div className="mb-4"><span className="text-4xl font-bold" style={{ fontFamily: "'Fraunces', serif" }}>R$ 29</span><span className="text-muted-foreground ml-1">/ mês</span></div>
+                <ul className="space-y-2 text-sm text-left mb-6">
+                  <li className="flex items-start gap-2"><Check className="w-4 h-4 text-primary mt-0.5 shrink-0" /> 1 novo plano por mês</li>
+                  <li className="flex items-start gap-2"><Check className="w-4 h-4 text-primary mt-0.5 shrink-0" /> Tracker de alimentação diário</li>
+                  <li className="flex items-start gap-2"><Check className="w-4 h-4 text-primary mt-0.5 shrink-0" /> Análise de refeições por foto com IA</li>
+                  <li className="flex items-start gap-2"><Check className="w-4 h-4 text-primary mt-0.5 shrink-0" /> Comparativo diário com o plano</li>
+                  <li className="flex items-start gap-2"><Check className="w-4 h-4 text-primary mt-0.5 shrink-0" /> Resumo semanal de aderência</li>
+                </ul>
+                <Button className="w-full" onClick={() => navigate('/signup')}>Assinar agora</Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>

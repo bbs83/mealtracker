@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronLeft, ChevronRight, Plus, Calendar, TrendingUp, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 import WeeklySummary from '@/components/tracker/WeeklySummary';
+import PricingCards from '@/components/PricingCards';
 
 const WEEKDAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTH_LABELS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -27,10 +28,20 @@ export default function TrackerPage() {
   const [calendar, setCalendar] = useState(null);
   const [activePlan, setActivePlan] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasAccess, setHasAccess] = useState(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      // Check subscription first
+      const subRes = await axios.get(`${API}/payments/status`, { headers: getAuthHeaders() });
+      setHasAccess(subRes.data.has_tracker);
+      
+      if (!subRes.data.has_tracker) {
+        setLoading(false);
+        return;
+      }
+
       const [calRes, planRes] = await Promise.all([
         axios.get(`${API}/meal-logs/calendar?year=${year}&month=${month}`, { headers: getAuthHeaders() }),
         axios.get(`${API}/active-plan`, { headers: getAuthHeaders() }),
@@ -72,6 +83,25 @@ export default function TrackerPage() {
   const cells = [];
   for (let i = 0; i < firstDay; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  if (hasAccess === false) {
+    return (
+      <div className="min-h-screen bg-background">
+        <AppHeader />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl font-semibold mb-3" style={{ fontFamily: "'Fraunces', serif" }}>
+              Tracker disponível com assinatura
+            </h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              O Tracker de alimentação com análise por IA está disponível no plano de assinatura mensal. Registre suas refeições por foto, compare com seu plano e acompanhe sua evolução.
+            </p>
+          </div>
+          <PricingCards />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

@@ -18,6 +18,7 @@ import StepDigestion from '@/components/form/StepDigestion';
 import StepWomen from '@/components/form/StepWomen';
 import StepReview from '@/components/form/StepReview';
 import GeneratingScreen from '@/components/form/GeneratingScreen';
+import PricingCards from '@/components/PricingCards';
 
 // Clean data before submission
 const cleanFormData = (data) => {
@@ -157,9 +158,10 @@ export default function NewAssessmentPage() {
     axios.delete(`${API}/form-draft`, { headers: getAuthHeaders() }).catch(() => {});
   };
 
+  const [showPricing, setShowPricing] = useState(false);
+
   const handleSubmit = async () => {
     setSubmitting(true);
-    setGenerating(true);
     try {
       const cleanedData = cleanFormData(data);
       const payload = { patient_data: cleanedData };
@@ -178,28 +180,31 @@ export default function NewAssessmentPage() {
         };
       }
 
-      // 1. Create assessment
+      // 1. Create assessment (always save data first)
       const assessmentRes = await axios.post(
         `${API}/assessments`, payload, { headers: getAuthHeaders() }
       );
       const assessmentId = assessmentRes.data.id;
 
-      // 2. Trigger plan generation (returns immediately, runs in background)
-      const planRes = await axios.post(
-        `${API}/assessments/${assessmentId}/generate-plan`, {},
-        { headers: getAuthHeaders(), timeout: 30000 }
-      );
-      const planId = planRes.data.id;
+      // 2. Try to generate plan (may fail with 402 if no payment)
+      try {
+        const planRes = await axios.post(
+          `${API}/assessments/${assessmentId}/generate-plan`, {},
+          { headers: getAuthHeaders(), timeout: 30000 }
+        );
+        const planId = planRes.data.id;
 
-      // 3. Clear draft
-      await axios.delete(`${API}/form-draft`, { headers: getAuthHeaders() }).catch(() => {});
+        // 3. Clear draft
+        await axios.delete(`${API}/form-draft`, { headers: getAuthHeaders() }).catch(() => {});
 
-      // 4. If already ready (cached), redirect immediately
-      if (planRes.data.status === 'ready') {
-        toast.success('Plano nutricional gerado com sucesso!');
-        navigate(`/app/plans/${planId}`);
-        return;
-      }
+        setGenerating(true);
+
+        // 4. If already ready (cached), redirect immediately
+        if (planRes.data.status === 'ready') {
+          toast.success('Plano nutricional gerado com sucesso!');
+          navigate(`/app/plans/${planId}`);
+          return;
+        }
 
       // 5. Poll for plan status until ready or error
       const pollInterval = setInterval(async () => {
@@ -232,9 +237,21 @@ export default function NewAssessmentPage() {
         }
       }, 15 * 60 * 1000);
 
+      } catch (genErr) {
+        // 402 = payment required → show pricing
+        if (genErr.response?.status === 402) {
+          setShowPricing(true);
+          setSubmitting(false);
+          return;
+        }
+        throw genErr;
+      }
+
     } catch (err) {
-      console.error('Error starting plan generation:', err);
-      toast.error('Erro ao iniciar geração do plano. Verifique sua conexão e tente novamente.');
+      console.error('Error:', err);
+      if (!showPricing) {
+        toast.error('Erro ao gerar o plano. Verifique sua conexão e tente novamente.');
+      }
       setGenerating(false);
     }
     setSubmitting(false);
@@ -242,6 +259,30 @@ export default function NewAssessmentPage() {
 
   if (generating) {
     return <GeneratingScreen />;
+  }
+
+  if (showPricing) {
+    return (
+      <div className="min-h-screen bg-background">
+        <AppHeader />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl font-semibold mb-3" style={{ fontFamily: "'Fraunces', serif" }}>
+              Seu questionário foi salvo!
+            </h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Para gerar seu plano nutricional personalizado, escolha uma das opções abaixo. Seu questionário ficará salvo e você não precisará preencher novamente.
+            </p>
+          </div>
+          <PricingCards />
+          <div className="text-center mt-6">
+            <Button variant="ghost" onClick={() => setShowPricing(false)}>
+              Voltar ao questionário
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const renderStep = () => {

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, Request as StarletteRequest
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -11,6 +11,7 @@ import uuid
 from datetime import datetime, timezone
 import json
 import anthropic
+import stripe
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -22,6 +23,10 @@ db = client[os.environ.get('DB_NAME', 'mealtrack')]
 
 # Anthropic client
 anthropicClient = anthropic.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY', ''))
+
+# Stripe config
+stripe.api_key = os.environ.get('STRIPE_API_KEY', '')
+STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
 
 # Create the main app
 app = FastAPI()
@@ -426,7 +431,7 @@ def _process_image_for_claude(b64_data: str, max_size_px: int = 1500, quality: i
         logger.error(f"Image processing failed: {e}")
         return None, None
 
-def _generate_plan_background(plan_id_str: str, assessment_data: dict):
+def _generate_plan_background(plan_id_str: str, assessment_data: dict, user_id: str = None):
     """Run plan generation in background thread (sync) so it doesn't block the request."""
     from bson import ObjectId
     try:
@@ -523,6 +528,15 @@ def _generate_plan_background(plan_id_str: str, assessment_data: dict):
                 "output_tokens": message.usage.output_tokens
             }}
         )
+        # Deduct single credit if applicable
+        if user_id:
+            user_sub = sync_db.user_subscriptions.find_one({"user_id": user_id})
+            if user_sub and user_sub.get("single_credits", 0) > 0 and user_sub.get("subscription_status") != "active":
+                sync_db.user_subscriptions.update_one(
+                    {"user_id": user_id},
+                    {"$inc": {"single_credits": -1}}
+                )
+                logger.info(f"[BG] Deducted 1 single credit for user {user_id}")
     except Exception as e:
         logger.error(f"[BG] Plan generation failed: {e}")
         sync_db.plans.update_one(
@@ -533,6 +547,12 @@ def _generate_plan_background(plan_id_str: str, assessment_data: dict):
 @api_router.post("/assessments/{assessment_id}/generate-plan")
 async def generate_plan(assessment_id: str, request: Request):
     payload = await get_current_user(request)
+    
+    # Check payment status
+    sub = await get_user_subscription(payload['user_id'])
+    if sub['plan_credits'] <= 0 and sub['status'] != 'subscriber':
+        raise HTTPException(status_code=402, detail="payment_required")
+    
     from bson import ObjectId
     try:
         assessment = await db.assessments.find_one({"_id": ObjectId(assessment_id), "user_id": payload['user_id']})
@@ -578,7 +598,7 @@ async def generate_plan(assessment_id: str, request: Request):
     }
     thread = threading.Thread(
         target=_generate_plan_background,
-        args=(str(result.inserted_id), assessment_copy),
+        args=(str(result.inserted_id), assessment_copy, payload['user_id']),
         daemon=True
     )
     thread.start()
@@ -832,6 +852,11 @@ def _merge_foods(existing_foods, new_foods):
 @api_router.post("/meal-logs")
 async def create_meal_log(data: MealLogCreate, request: Request):
     payload = await get_current_user(request)
+    
+    # Check subscription for tracker access
+    sub = await get_user_subscription(payload['user_id'])
+    if not sub.get('has_tracker'):
+        raise HTTPException(status_code=402, detail="subscription_required")
     
     if not data.photo_base64 and not data.description:
         raise HTTPException(status_code=400, detail="Envie uma foto ou descrição da refeição")
@@ -1182,6 +1207,210 @@ async def get_weekly_summary(request: Request, end_date: str = None):
         "targets": targets,
         "days_tracked": len(days_with_data)
     }
+
+# ============ PAYMENTS (Stripe) ============
+PAYMENT_PACKAGES = {
+    "single_plan": {"amount": 49.00, "currency": "brl", "name": "Plano Único", "description": "Geração de 1 plano nutricional personalizado", "mode": "payment"},
+    "monthly_subscription": {"amount": 29.00, "currency": "brl", "name": "Assinatura Mensal", "description": "1 plano/mês + Tracker de alimentação", "mode": "subscription"},
+}
+
+class CreateCheckoutRequest(BaseModel):
+    package_id: str  # "single_plan" or "monthly_subscription"
+    origin_url: str
+
+async def get_user_subscription(user_id: str) -> dict:
+    """Get user's payment/subscription status."""
+    user_sub = await db.user_subscriptions.find_one({"user_id": user_id})
+    if not user_sub:
+        return {"status": "free", "plan_credits": 0, "has_tracker": False, "subscription_id": None}
+    
+    # Check if subscription is active
+    if user_sub.get("subscription_status") == "active":
+        # Check plan credits for this month
+        now = datetime.now(timezone.utc)
+        month_key = now.strftime("%Y-%m")
+        plans_this_month = await db.plans.count_documents({
+            "user_id": user_id,
+            "status": "ready",
+            "created_at": {"$gte": datetime(now.year, now.month, 1, tzinfo=timezone.utc)}
+        })
+        return {
+            "status": "subscriber",
+            "plan_credits": max(0, 1 - plans_this_month),
+            "has_tracker": True,
+            "subscription_id": user_sub.get("stripe_subscription_id"),
+            "current_period_end": user_sub.get("current_period_end"),
+        }
+    
+    # Check single plan credits
+    credits = user_sub.get("single_credits", 0)
+    return {"status": "single" if credits > 0 else "free", "plan_credits": credits, "has_tracker": False, "subscription_id": None}
+
+@api_router.get("/payments/status")
+async def get_payment_status(request: Request):
+    payload = await get_current_user(request)
+    sub = await get_user_subscription(payload['user_id'])
+    return sub
+
+@api_router.get("/payments/config")
+async def get_payment_config():
+    return {"publishable_key": STRIPE_PUBLISHABLE_KEY, "packages": PAYMENT_PACKAGES}
+
+@api_router.post("/payments/create-checkout")
+async def create_checkout(data: CreateCheckoutRequest, request: Request):
+    payload = await get_current_user(request)
+    
+    pkg = PAYMENT_PACKAGES.get(data.package_id)
+    if not pkg:
+        raise HTTPException(status_code=400, detail="Pacote inválido")
+    
+    # Get or create Stripe customer
+    user_sub = await db.user_subscriptions.find_one({"user_id": payload['user_id']})
+    stripe_customer_id = user_sub.get("stripe_customer_id") if user_sub else None
+    
+    if not stripe_customer_id:
+        from bson import ObjectId
+        user = await db.users.find_one({"_id": ObjectId(payload['user_id'])})
+        customer = stripe.Customer.create(
+            email=user['email'],
+            name=user.get('name', ''),
+            metadata={"user_id": payload['user_id']}
+        )
+        stripe_customer_id = customer.id
+        await db.user_subscriptions.update_one(
+            {"user_id": payload['user_id']},
+            {"$set": {"user_id": payload['user_id'], "stripe_customer_id": stripe_customer_id}},
+            upsert=True
+        )
+    
+    success_url = f"{data.origin_url}/app/payment-success?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{data.origin_url}/app/new"
+    
+    session_params = {
+        "customer": stripe_customer_id,
+        "success_url": success_url,
+        "cancel_url": cancel_url,
+        "metadata": {"user_id": payload['user_id'], "package_id": data.package_id},
+    }
+    
+    if pkg["mode"] == "subscription":
+        # Create a price for subscription
+        session_params["mode"] = "subscription"
+        session_params["line_items"] = [{
+            "price_data": {
+                "currency": pkg["currency"],
+                "unit_amount": int(pkg["amount"] * 100),
+                "recurring": {"interval": "month"},
+                "product_data": {"name": pkg["name"], "description": pkg["description"]},
+            },
+            "quantity": 1,
+        }]
+    else:
+        session_params["mode"] = "payment"
+        session_params["line_items"] = [{
+            "price_data": {
+                "currency": pkg["currency"],
+                "unit_amount": int(pkg["amount"] * 100),
+                "product_data": {"name": pkg["name"], "description": pkg["description"]},
+            },
+            "quantity": 1,
+        }]
+    
+    session = stripe.checkout.Session.create(**session_params)
+    
+    # Record transaction
+    await db.payment_transactions.insert_one({
+        "user_id": payload['user_id'],
+        "session_id": session.id,
+        "package_id": data.package_id,
+        "amount": pkg["amount"],
+        "currency": pkg["currency"],
+        "payment_status": "pending",
+        "created_at": datetime.now(timezone.utc),
+    })
+    
+    return {"url": session.url, "session_id": session.id}
+
+@api_router.get("/payments/checkout-status/{session_id}")
+async def get_checkout_status(session_id: str, request: Request):
+    payload = await get_current_user(request)
+    
+    session = stripe.checkout.Session.retrieve(session_id)
+    
+    # Update transaction
+    tx = await db.payment_transactions.find_one({"session_id": session_id, "user_id": payload['user_id']})
+    if not tx:
+        raise HTTPException(status_code=404, detail="Transação não encontrada")
+    
+    new_status = session.payment_status  # "paid", "unpaid", "no_payment_required"
+    
+    # Only process if transitioning to paid and not already processed
+    if new_status == "paid" and tx.get("payment_status") != "paid":
+        await db.payment_transactions.update_one(
+            {"_id": tx["_id"]},
+            {"$set": {"payment_status": "paid", "paid_at": datetime.now(timezone.utc)}}
+        )
+        
+        package_id = tx.get("package_id")
+        if package_id == "single_plan":
+            await db.user_subscriptions.update_one(
+                {"user_id": payload['user_id']},
+                {"$inc": {"single_credits": 1}},
+                upsert=True
+            )
+            logger.info(f"Added 1 single plan credit for user {payload['user_id']}")
+        elif package_id == "monthly_subscription":
+            await db.user_subscriptions.update_one(
+                {"user_id": payload['user_id']},
+                {"$set": {
+                    "subscription_status": "active",
+                    "stripe_subscription_id": session.subscription,
+                    "current_period_end": datetime.fromtimestamp(
+                        stripe.Subscription.retrieve(session.subscription).current_period_end,
+                        tz=timezone.utc
+                    ) if session.subscription else None,
+                    "activated_at": datetime.now(timezone.utc),
+                }},
+                upsert=True
+            )
+            logger.info(f"Activated subscription for user {payload['user_id']}")
+    elif new_status != "paid":
+        await db.payment_transactions.update_one(
+            {"_id": tx["_id"]},
+            {"$set": {"payment_status": new_status}}
+        )
+    
+    return {
+        "status": session.status,
+        "payment_status": new_status,
+        "package_id": tx.get("package_id"),
+    }
+
+@api_router.post("/webhook/stripe")
+async def stripe_webhook(request: StarletteRequest):
+    payload_bytes = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+    
+    # For now, just log webhook events (proper signature verification needs webhook secret)
+    try:
+        event = json.loads(payload_bytes)
+        event_type = event.get("type", "")
+        logger.info(f"Stripe webhook: {event_type}")
+        
+        if event_type == "customer.subscription.deleted":
+            sub_data = event.get("data", {}).get("object", {})
+            customer_id = sub_data.get("customer")
+            user_sub = await db.user_subscriptions.find_one({"stripe_customer_id": customer_id})
+            if user_sub:
+                await db.user_subscriptions.update_one(
+                    {"_id": user_sub["_id"]},
+                    {"$set": {"subscription_status": "cancelled"}}
+                )
+                logger.info(f"Subscription cancelled for customer {customer_id}")
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+    
+    return {"received": True}
 
 # ============ HEALTH CHECK ============
 @api_router.get("/")
